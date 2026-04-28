@@ -6,1148 +6,259 @@
     <title>Warframe Craft Tracker</title>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        /* ===== CSS VARIABLES ===== */
         :root {
-            --bg-primary: #0a0e14;
-            --bg-secondary: #111820;
-            --bg-tertiary: #1a2230;
-            --bg-card: #151d28;
-            --bg-card-hover: #1c2737;
-            --bg-input: #0d1117;
-            --border-color: #1e2d3d;
-            --border-accent: #00e8fc33;
-            --text-primary: #e0e6ed;
-            --text-secondary: #8899aa;
-            --text-muted: #556677;
-            --accent-primary: #00e8fc;
-            --accent-secondary: #00bcd4;
-            --accent-glow: #00e8fc33;
-            --success: #4caf50;
-            --success-bg: #4caf5022;
-            --warning: #ff9800;
-            --warning-bg: #ff980022;
-            --danger: #f44336;
-            --danger-bg: #f4433622;
-            --gold: #ffd700;
-            --gold-bg: #ffd70015;
-            --prime-gold: #c4a24e;
-            --prime-gold-light: #e8d48b;
-            --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
-            --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
-            --shadow-lg: 0 8px 24px rgba(0,0,0,0.5);
-            --shadow-glow: 0 0 20px rgba(0,232,252,0.15);
-            --radius-sm: 4px;
-            --radius-md: 8px;
-            --radius-lg: 12px;
-            --transition: 0.2s ease;
-        }
-
-        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
-        html { scroll-behavior: smooth; }
-
-        body {
-            font-family: 'Rajdhani', sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            min-height: 100vh;
-            overflow-x: hidden;
-            font-size: 16px;
-            line-height: 1.5;
-        }
-
-        body::before {
-            content: '';
-            position: fixed;
-            top:0; left:0; right:0; bottom:0;
-            background:
-                radial-gradient(ellipse at 20% 50%, rgba(0,232,252,0.03) 0%, transparent 50%),
-                radial-gradient(ellipse at 80% 50%, rgba(0,188,212,0.03) 0%, transparent 50%);
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        #app { position: relative; z-index: 1; }
-
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: var(--bg-primary); }
-        ::-webkit-scrollbar-thumb { background: var(--bg-tertiary); border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--accent-secondary); }
-
-        /* ===== LOADING SCREEN ===== */
-        .loading-screen {
-            position: fixed;
-            top:0; left:0; right:0; bottom:0;
-            background: var(--bg-primary);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-            transition: opacity 0.5s ease;
-        }
-
-        .loading-screen.hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .loading-logo {
-            width: 80px; height: 80px;
-            margin-bottom: 24px;
-            animation: loadingPulse 1.5s ease-in-out infinite;
-        }
-
-        @keyframes loadingPulse {
-            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 10px rgba(0,232,252,0.4)); }
-            50% { transform: scale(1.1); filter: drop-shadow(0 0 20px rgba(0,232,252,0.7)); }
-        }
-
-        .loading-text {
-            font-family: 'Orbitron', sans-serif;
-            color: var(--accent-primary);
-            font-size: 14px;
-            letter-spacing: 3px;
-            margin-bottom: 20px;
-        }
-
-        .loading-bar-container {
-            width: 300px;
-            height: 4px;
-            background: var(--bg-tertiary);
-            border-radius: 2px;
-            overflow: hidden;
-            margin-bottom: 12px;
-        }
-
-        .loading-bar {
-            height: 100%;
-            width: 0%;
-            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
-            border-radius: 2px;
-            transition: width 0.3s ease;
-        }
-
-        .loading-status {
-            font-size: 13px;
-            color: var(--text-muted);
-            min-height: 20px;
-        }
-
-        .loading-error {
-            color: var(--warning);
-            font-size: 13px;
-            margin-top: 12px;
-            max-width: 400px;
-            text-align: center;
-        }
-
-        .loading-error button {
-            margin-top: 10px;
-            padding: 8px 20px;
-            background: var(--accent-primary);
-            color: var(--bg-primary);
-            border: none;
-            border-radius: var(--radius-md);
-            font-family: 'Rajdhani', sans-serif;
-            font-weight: 700;
-            font-size: 14px;
-            cursor: pointer;
-        }
-
-        /* ===== HEADER ===== */
-        .header {
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            background: var(--bg-secondary);
-            border-bottom: 1px solid var(--border-color);
-            box-shadow: var(--shadow-md);
-        }
-
-        .header-content {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 12px 24px;
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .logo-icon {
-            filter: drop-shadow(0 0 8px rgba(0,232,252,0.4));
-            animation: logoPulse 3s ease-in-out infinite;
-        }
-
-        @keyframes logoPulse {
-            0%, 100% { filter: drop-shadow(0 0 8px rgba(0,232,252,0.4)); }
-            50% { filter: drop-shadow(0 0 16px rgba(0,232,252,0.6)); }
-        }
-
-        .logo h1 {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--accent-primary);
-            letter-spacing: 3px;
-            text-shadow: 0 0 20px rgba(0,232,252,0.3);
-        }
-
-        .user-section {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .user-name {
-            font-size: 14px;
-            color: var(--text-secondary);
-            font-weight: 500;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-        }
-
-        .btn-small {
-            background: var(--bg-tertiary);
-            border: 1px solid var(--border-color);
-            color: var(--text-secondary);
-            padding: 6px 8px;
-            border-radius: var(--radius-sm);
-            cursor: pointer;
-            transition: var(--transition);
-            display: flex;
-            align-items: center;
-        }
-
-        .btn-small:hover {
-            background: var(--bg-card-hover);
-            color: var(--accent-primary);
-            border-color: var(--accent-primary);
-        }
-
-        .api-status {
-            font-size: 11px;
-            padding: 3px 8px;
-            border-radius: 3px;
-            letter-spacing: 1px;
-            font-weight: 600;
-        }
-
-        .api-status.online {
-            background: var(--success-bg);
-            color: var(--success);
-            border: 1px solid var(--success)44;
-        }
-
-        .api-status.offline {
-            background: var(--warning-bg);
-            color: var(--warning);
-            border: 1px solid var(--warning)44;
-        }
-
-        /* ===== NAV TABS ===== */
-        .nav-tabs {
-            display: flex;
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 0 24px;
-        }
-
-        .nav-tab {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 12px 24px;
-            background: none;
-            border: none;
-            color: var(--text-muted);
-            font-family: 'Rajdhani', sans-serif;
-            font-size: 15px;
-            font-weight: 600;
-            letter-spacing: 2px;
-            cursor: pointer;
-            transition: var(--transition);
-            position: relative;
-            text-transform: uppercase;
-        }
-
-        .nav-tab::after {
-            content: '';
-            position: absolute;
-            bottom: 0; left: 0; right: 0;
-            height: 2px;
-            background: transparent;
-            transition: var(--transition);
-        }
-
-        .nav-tab:hover { color: var(--text-secondary); }
-
-        .nav-tab.active { color: var(--accent-primary); }
-
-        .nav-tab.active::after {
-            background: var(--accent-primary);
-            box-shadow: 0 0 10px rgba(0,232,252,0.5);
-        }
-
-        .nav-tab svg { opacity: 0.7; }
-        .nav-tab.active svg { opacity: 1; stroke: var(--accent-primary); }
-
-        /* ===== TAB CONTENT ===== */
-        .tab-content {
-            display: none;
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 20px 24px;
-            animation: fadeIn 0.3s ease;
-        }
-
-        .tab-content.active { display: block; }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* ===== CONTROLS BAR ===== */
-        .controls-bar {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-
-        .search-box {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: var(--bg-input);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-md);
-            padding: 10px 16px;
-            flex: 1;
-            min-width: 200px;
-            transition: var(--transition);
-        }
-
-        .search-box:focus-within {
-            border-color: var(--accent-primary);
-            box-shadow: 0 0 0 2px var(--accent-glow);
-        }
-
-        .search-box svg { stroke: var(--text-muted); flex-shrink: 0; }
-
-        .search-box input {
-            background: none;
-            border: none;
-            color: var(--text-primary);
-            font-family: 'Rajdhani', sans-serif;
-            font-size: 15px;
-            width: 100%;
-            outline: none;
-        }
-
-        .search-box input::placeholder { color: var(--text-muted); }
-
-        .filter-group {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-
-        .filter-select {
-            background: var(--bg-input);
-            border: 1px solid var(--border-color);
-            color: var(--text-primary);
-            font-family: 'Rajdhani', sans-serif;
-            font-size: 14px;
-            padding: 10px 14px;
-            border-radius: var(--radius-md);
-            cursor: pointer;
-            transition: var(--transition);
-            outline: none;
-        }
-
-        .filter-select:hover,
-        .filter-select:focus { border-color: var(--accent-primary); }
-
-        .filter-select option {
-            background: var(--bg-secondary);
-            color: var(--text-primary);
-        }
-
-        /* ===== BUTTONS ===== */
-        .btn-primary {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 20px;
-            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-            color: var(--bg-primary);
-            border: none;
-            border-radius: var(--radius-md);
-            font-family: 'Rajdhani', sans-serif;
-            font-size: 14px;
-            font-weight: 700;
-            letter-spacing: 1px;
-            cursor: pointer;
-            transition: var(--transition);
-            text-transform: uppercase;
-            white-space: nowrap;
-        }
-
-        .btn-primary:hover { box-shadow: var(--shadow-glow); transform: translateY(-1px); }
-        .btn-primary:active { transform: translateY(0); }
-
-        .btn-secondary {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 16px;
-            background: var(--bg-tertiary);
-            color: var(--text-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-md);
-            font-family: 'Rajdhani', sans-serif;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: var(--transition);
-        }
-
-        .btn-secondary:hover {
-            background: var(--bg-card-hover);
-            color: var(--accent-primary);
-            border-color: var(--accent-primary);
-        }
-
-        .btn-warning { background: linear-gradient(135deg, var(--warning), #e68900); }
-
-        .btn-danger-outline {
-            background: transparent;
-            border: 1px solid var(--danger);
-            color: var(--danger);
-            padding: 6px 12px;
-            border-radius: var(--radius-sm);
-            font-family: 'Rajdhani', sans-serif;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: var(--transition);
-        }
-
-        .btn-danger-outline:hover { background: var(--danger-bg); }
-
-        /* ===== STATS BAR ===== */
-        .recipes-stats, .inventory-stats {
-            display: flex;
-            gap: 16px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-
-        .stat-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-md);
-            padding: 14px 20px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            flex: 1;
-            min-width: 150px;
-        }
-
-        .stat-icon {
-            width: 40px; height: 40px;
-            border-radius: var(--radius-sm);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-        }
-
-        .stat-icon.blue { background: var(--accent-glow); }
-        .stat-icon.green { background: var(--success-bg); }
-        .stat-icon.orange { background: var(--warning-bg); }
-        .stat-icon.gold { background: var(--gold-bg); }
-
-        .stat-info { display: flex; flex-direction: column; }
-
-        .stat-value {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 22px;
-            font-weight: 700;
-            color: var(--text-primary);
-            line-height: 1;
-        }
-
-        .stat-label {
-            font-size: 12px;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        /* ===== RECIPES GRID ===== */
-        .recipes-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 16px;
-        }
-
-        .recipe-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-lg);
-            overflow: hidden;
-            transition: var(--transition);
-            cursor: pointer;
-            position: relative;
-        }
-
-        .recipe-card:hover {
-            border-color: var(--accent-primary);
-            box-shadow: var(--shadow-glow);
-            transform: translateY(-2px);
-        }
-
-        .recipe-card.prime { border-color: rgba(196,162,78,0.2); }
-        .recipe-card.prime:hover {
-            border-color: var(--prime-gold);
-            box-shadow: 0 0 20px rgba(196,162,78,0.15);
-        }
-
-        .recipe-card-header {
-            padding: 16px 18px 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-        }
-
-        .recipe-name {
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--text-primary);
-            letter-spacing: 0.5px;
-        }
-
-        .recipe-card.prime .recipe-name { color: var(--prime-gold-light); }
-
-        .recipe-category {
-            font-size: 11px;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            margin-top: 2px;
-        }
-
-        .recipe-badge {
-            font-size: 10px;
-            font-weight: 700;
-            padding: 3px 8px;
-            border-radius: 3px;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            white-space: nowrap;
-        }
-
-        .recipe-badge.complete { background: var(--success-bg); color: var(--success); border: 1px solid rgba(76,175,80,0.27); }
-        .recipe-badge.partial { background: var(--warning-bg); color: var(--warning); border: 1px solid rgba(255,152,0,0.27); }
-        .recipe-badge.none { background: var(--danger-bg); color: var(--danger); border: 1px solid rgba(244,67,54,0.27); }
-
-        .recipe-card-body { padding: 6px 18px 14px; }
-
-        .recipe-progress-bar {
-            width: 100%; height: 6px;
-            background: var(--bg-primary);
-            border-radius: 3px;
-            overflow: hidden;
-            margin-bottom: 10px;
-        }
-
-        .recipe-progress-fill {
-            height: 100%;
-            border-radius: 3px;
-            transition: width 0.5s ease;
-        }
-
-        .recipe-progress-fill.green { background: linear-gradient(90deg, var(--success), #66bb6a); }
-        .recipe-progress-fill.orange { background: linear-gradient(90deg, var(--warning), #ffb74d); }
-        .recipe-progress-fill.red { background: linear-gradient(90deg, var(--danger), #e57373); }
-        .recipe-progress-fill.gold { background: linear-gradient(90deg, var(--prime-gold), var(--prime-gold-light)); }
-
-        .recipe-items-preview { display: flex; flex-wrap: wrap; gap: 6px; }
-
-        .recipe-item-tag {
-            font-size: 12px;
-            padding: 3px 8px;
-            border-radius: 3px;
-            background: var(--bg-primary);
-            border: 1px solid var(--border-color);
-            color: var(--text-muted);
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .recipe-item-tag.owned {
-            border-color: rgba(76,175,80,0.27);
-            color: var(--success);
-            background: var(--success-bg);
-        }
-
-        .recipe-item-tag .check { font-size: 10px; }
-
-        .recipe-counter {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 13px;
-            color: var(--text-secondary);
-            text-align: right;
-            margin-top: 6px;
-        }
-
-        .recipe-thumb {
-            width: 48px; height: 48px;
-            border-radius: var(--radius-sm);
-            object-fit: contain;
-            background: var(--bg-primary);
-            border: 1px solid var(--border-color);
-            flex-shrink: 0;
-        }
-
-        /* ===== INVENTORY LIST ===== */
-        .inventory-list { display: flex; flex-direction: column; gap: 8px; }
-
-        .inventory-item {
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-md);
-            padding: 14px 18px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            transition: var(--transition);
-        }
-
-        .inventory-item:hover {
-            border-color: var(--border-accent);
-            background: var(--bg-card-hover);
-        }
-
-        .inventory-item-info { display: flex; flex-direction: column; }
-
-        .inventory-item-name {
-            font-size: 16px;
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-
-        .inventory-item-recipes {
-            font-size: 12px;
-            color: var(--text-muted);
-            margin-top: 2px;
-        }
-
-        .inventory-item-actions {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .quantity-control {
-            display: flex;
-            align-items: center;
-            background: var(--bg-primary);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-sm);
-            overflow: hidden;
-        }
-
-        .quantity-btn {
-            width: 32px; height: 32px;
-            background: var(--bg-tertiary);
-            border: none;
-            color: var(--text-secondary);
-            font-size: 18px;
-            cursor: pointer;
-            transition: var(--transition);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: 'Rajdhani', sans-serif;
-            font-weight: 700;
-        }
-
-        .quantity-btn:hover { background: var(--accent-primary); color: var(--bg-primary); }
-
-        .quantity-value {
-            width: 40px;
-            text-align: center;
-            font-family: 'Orbitron', sans-serif;
-            font-size: 14px;
-            color: var(--accent-primary);
-            font-weight: 600;
-        }
-
-        /* ===== MODAL ===== */
-        .modal {
-            position: fixed;
-            top:0; left:0; right:0; bottom:0;
-            background: rgba(0,0,0,0.7);
-            backdrop-filter: blur(4px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            animation: modalFade 0.2s ease;
-            padding: 20px;
-        }
-
-        .modal.hidden { display: none; }
-
-        @keyframes modalFade { from { opacity: 0; } to { opacity: 1; } }
-
-        .modal-content {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-lg);
-            width: 100%;
-            max-width: 600px;
-            max-height: 80vh;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            box-shadow: var(--shadow-lg);
-            animation: modalSlide 0.3s ease;
-        }
-
-        @keyframes modalSlide {
-            from { transform: translateY(20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-
-        .modal-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 18px 24px;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .modal-header h2 {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 16px;
-            color: var(--accent-primary);
-            letter-spacing: 2px;
-        }
-
-        .modal-close {
-            background: none;
-            border: none;
-            color: var(--text-muted);
-            font-size: 28px;
-            cursor: pointer;
-            transition: var(--transition);
-            line-height: 1;
-            padding: 0 4px;
-        }
-
-        .modal-close:hover { color: var(--danger); }
-
-        .modal-body {
-            padding: 20px 24px;
-            overflow-y: auto;
-        }
-
-        .modal-search { margin-bottom: 16px; }
-
-        /* Login Modal */
-        .login-modal {
-            text-align: center;
-            padding: 40px;
-            max-width: 420px;
-        }
-
-        .modal-logo { margin-bottom: 20px; }
-        .modal-logo svg { filter: drop-shadow(0 0 12px rgba(0,232,252,0.5)); }
-
-        .login-modal h2 {
-            font-family: 'Orbitron', sans-serif;
-            color: var(--accent-primary);
-            font-size: 20px;
-            letter-spacing: 3px;
-            margin-bottom: 8px;
-        }
-
-        .login-modal p {
-            color: var(--text-muted);
-            margin-bottom: 24px;
-            font-size: 15px;
-        }
-
-        .login-modal input {
-            width: 100%;
-            background: var(--bg-input);
-            border: 1px solid var(--border-color);
-            color: var(--text-primary);
-            font-family: 'Rajdhani', sans-serif;
-            font-size: 16px;
-            padding: 12px 16px;
-            border-radius: var(--radius-md);
-            margin-bottom: 16px;
-            outline: none;
-            text-align: center;
-            letter-spacing: 1px;
-            transition: var(--transition);
-        }
-
-        .login-modal input:focus {
-            border-color: var(--accent-primary);
-            box-shadow: 0 0 0 2px var(--accent-glow);
-        }
-
-        .login-modal .btn-primary {
-            width: 100%;
-            justify-content: center;
-            padding: 14px;
-            font-size: 16px;
-        }
-
-        /* ===== ADD ITEM LIST ===== */
-        .add-item-list {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            max-height: 400px;
-            overflow-y: auto;
-        }
-
-        .add-item-option {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 10px 14px;
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-sm);
-            cursor: pointer;
-            transition: var(--transition);
-        }
-
-        .add-item-option:hover {
-            border-color: var(--accent-primary);
-            background: var(--bg-card-hover);
-        }
-
-        .add-item-option.in-inventory {
-            border-color: rgba(76,175,80,0.2);
-            background: var(--success-bg);
-        }
-
-        .add-item-option-name { font-size: 14px; font-weight: 600; color: var(--text-primary); }
-        .add-item-option-sub { font-size: 11px; color: var(--text-muted); }
-
-        .add-item-option-btn {
-            padding: 4px 12px;
-            border-radius: var(--radius-sm);
-            font-family: 'Rajdhani', sans-serif;
-            font-size: 12px;
-            font-weight: 700;
-            border: none;
-            cursor: pointer;
-            transition: var(--transition);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .add-item-option-btn.add { background: var(--accent-primary); color: var(--bg-primary); }
-        .add-item-option-btn.add:hover { box-shadow: var(--shadow-glow); }
-
-        .add-item-option-btn.remove {
-            background: var(--danger-bg);
-            color: var(--danger);
-            border: 1px solid rgba(244,67,54,0.2);
-        }
-
-        .add-item-option-btn.remove:hover { background: var(--danger); color: white; }
-
-        /* ===== RECIPE DETAIL MODAL ===== */
-        .recipe-detail-modal { max-width: 650px; }
-
-        .recipe-detail-info { margin-bottom: 20px; }
-
-        .recipe-detail-category {
-            font-size: 12px;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 4px;
-        }
-
-        .recipe-detail-progress {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 20px;
-            padding: 14px;
-            background: var(--bg-card);
-            border-radius: var(--radius-md);
-            border: 1px solid var(--border-color);
-        }
-
-        .recipe-detail-progress-bar {
-            flex: 1; height: 10px;
-            background: var(--bg-primary);
-            border-radius: 5px;
-            overflow: hidden;
-        }
-
-        .recipe-detail-progress-fill {
-            height: 100%;
-            border-radius: 5px;
-            transition: width 0.5s ease;
-        }
-
-        .recipe-detail-progress-text {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 16px;
-            color: var(--text-primary);
-            white-space: nowrap;
-        }
-
-        .recipe-detail-items { display: flex; flex-direction: column; gap: 8px; }
-
-        .recipe-detail-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 12px 16px;
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-md);
-            transition: var(--transition);
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-
-        .recipe-detail-item.owned {
-            border-color: rgba(76,175,80,0.27);
-            background: var(--success-bg);
-        }
-
-        .recipe-detail-item-name {
-            font-size: 15px;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .recipe-detail-item-status {
-            font-size: 12px;
-            font-weight: 700;
-            padding: 3px 10px;
-            border-radius: 3px;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-        }
-
-        .recipe-detail-item-status.owned { background: var(--success-bg); color: var(--success); }
-        .recipe-detail-item-status.missing { background: var(--danger-bg); color: var(--danger); }
-
-        .toggle-btn {
-            padding: 4px 12px;
-            border-radius: var(--radius-sm);
-            font-family: 'Rajdhani', sans-serif;
-            font-size: 12px;
-            font-weight: 700;
-            border: none;
-            cursor: pointer;
-            transition: var(--transition);
-            text-transform: uppercase;
-            margin-left: 8px;
-        }
-
-        .toggle-btn.add-inv { background: var(--accent-primary); color: var(--bg-primary); }
-        .toggle-btn.remove-inv {
-            background: var(--danger-bg);
-            color: var(--danger);
-            border: 1px solid rgba(244,67,54,0.2);
-        }
-
-        /* ===== IMPORT/EXPORT ===== */
-        .import-export-section { margin-bottom: 24px; }
-        .import-export-section:last-child { margin-bottom: 0; }
-
-        .import-export-section h3 {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 13px;
-            color: var(--accent-primary);
-            letter-spacing: 2px;
-            margin-bottom: 8px;
-        }
-
-        .import-export-section p { font-size: 13px; color: var(--text-muted); margin-bottom: 10px; }
-
-        .data-textarea {
-            width: 100%; height: 100px;
-            background: var(--bg-input);
-            border: 1px solid var(--border-color);
-            color: var(--text-primary);
-            font-family: monospace;
-            font-size: 12px;
-            padding: 10px;
-            border-radius: var(--radius-md);
-            resize: vertical;
-            margin-bottom: 10px;
-            outline: none;
-        }
-
-        .data-textarea:focus { border-color: var(--accent-primary); }
-
-        /* ===== TOAST ===== */
-        .toast {
-            position: fixed;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 12px 24px;
-            background: var(--bg-secondary);
-            border: 1px solid var(--accent-primary);
-            border-radius: var(--radius-md);
-            color: var(--text-primary);
-            font-size: 14px;
-            font-weight: 600;
-            z-index: 2000;
-            box-shadow: var(--shadow-glow), var(--shadow-md);
-            animation: toastIn 0.3s ease;
-            white-space: nowrap;
-        }
-
-        .toast.hidden { display: none; }
-        .toast.success { border-color: var(--success); }
-        .toast.error { border-color: var(--danger); }
-
-        @keyframes toastIn {
-            from { opacity: 0; transform: translateX(-50%) translateY(20px); }
-            to { opacity: 1; transform: translateX(-50%) translateY(0); }
-        }
-
-        /* ===== EMPTY STATE ===== */
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: var(--text-muted);
-        }
-
-        .empty-state svg { margin-bottom: 16px; opacity: 0.3; }
-        .empty-state h3 { font-size: 18px; margin-bottom: 8px; color: var(--text-secondary); }
-        .empty-state p { font-size: 14px; }
-
-        /* ===== RESPONSIVE ===== */
-        @media (max-width: 768px) {
-            .header-content { padding: 10px 16px; }
-            .logo h1 { font-size: 13px; letter-spacing: 1.5px; }
-            .nav-tabs { padding: 0 16px; }
-            .nav-tab { padding: 10px 16px; font-size: 13px; letter-spacing: 1px; }
-            .tab-content { padding: 16px; }
-            .controls-bar { flex-direction: column; }
-            .search-box { width: 100%; }
-            .filter-group { width: 100%; justify-content: stretch; }
-            .filter-select { flex: 1; }
-            .btn-add { flex: 1; justify-content: center; }
-            .recipes-grid { grid-template-columns: 1fr; }
-            .recipes-stats, .inventory-stats { flex-direction: column; }
-            .stat-card { min-width: auto; }
-            .modal-content { max-height: 90vh; }
-            .login-modal { padding: 30px 24px; }
-        }
-
-        @media (max-width: 480px) {
-            .logo-icon { width: 30px; height: 30px; }
-            .logo h1 { font-size: 11px; }
-            .user-name { display: none; }
-            .api-status { display: none; }
-        }
+            --bg-primary:#0a0e14;--bg-secondary:#111820;--bg-tertiary:#1a2230;
+            --bg-card:#151d28;--bg-card-hover:#1c2737;--bg-input:#0d1117;
+            --border-color:#1e2d3d;--border-accent:#00e8fc33;
+            --text-primary:#e0e6ed;--text-secondary:#8899aa;--text-muted:#556677;
+            --accent-primary:#00e8fc;--accent-secondary:#00bcd4;--accent-glow:#00e8fc33;
+            --success:#4caf50;--success-bg:#4caf5022;
+            --warning:#ff9800;--warning-bg:#ff980022;
+            --danger:#f44336;--danger-bg:#f4433622;
+            --gold:#ffd700;--gold-bg:#ffd70015;
+            --prime-gold:#c4a24e;--prime-gold-light:#e8d48b;
+            --shadow-md:0 4px 12px rgba(0,0,0,0.4);
+            --shadow-lg:0 8px 24px rgba(0,0,0,0.5);
+            --shadow-glow:0 0 20px rgba(0,232,252,0.15);
+            --radius-sm:4px;--radius-md:8px;--radius-lg:12px;
+            --transition:0.2s ease;
+        }
+        *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+        html{scroll-behavior:smooth;}
+        body{font-family:'Rajdhani',sans-serif;background:var(--bg-primary);color:var(--text-primary);min-height:100vh;overflow-x:hidden;font-size:16px;line-height:1.5;}
+        body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background:radial-gradient(ellipse at 20% 50%,rgba(0,232,252,0.03) 0%,transparent 50%),radial-gradient(ellipse at 80% 50%,rgba(0,188,212,0.03) 0%,transparent 50%);pointer-events:none;z-index:0;}
+        #app{position:relative;z-index:1;}
+        ::-webkit-scrollbar{width:8px;}
+        ::-webkit-scrollbar-track{background:var(--bg-primary);}
+        ::-webkit-scrollbar-thumb{background:var(--bg-tertiary);border-radius:4px;}
+        ::-webkit-scrollbar-thumb:hover{background:var(--accent-secondary);}
+
+        .loading-screen{position:fixed;top:0;left:0;right:0;bottom:0;background:var(--bg-primary);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:opacity 0.5s ease;}
+        .loading-screen.hidden{opacity:0;pointer-events:none;}
+        .loading-logo{width:80px;height:80px;margin-bottom:24px;animation:loadPulse 1.5s ease-in-out infinite;}
+        @keyframes loadPulse{0%,100%{transform:scale(1);filter:drop-shadow(0 0 10px rgba(0,232,252,0.4));}50%{transform:scale(1.1);filter:drop-shadow(0 0 20px rgba(0,232,252,0.7));}}
+        .loading-text{font-family:'Orbitron',sans-serif;color:var(--accent-primary);font-size:14px;letter-spacing:3px;margin-bottom:20px;}
+        .loading-bar-container{width:300px;height:4px;background:var(--bg-tertiary);border-radius:2px;overflow:hidden;margin-bottom:12px;}
+        .loading-bar{height:100%;width:0%;border-radius:2px;background:linear-gradient(90deg,var(--accent-primary),var(--accent-secondary));transition:width 0.3s ease;}
+        .loading-status{font-size:13px;color:var(--text-muted);min-height:20px;}
+        .loading-error{color:var(--warning);font-size:13px;margin-top:12px;max-width:400px;text-align:center;}
+        .loading-error button{margin-top:10px;padding:8px 20px;background:var(--accent-primary);color:var(--bg-primary);border:none;border-radius:var(--radius-md);font-family:'Rajdhani',sans-serif;font-weight:700;font-size:14px;cursor:pointer;}
+
+        .header{position:sticky;top:0;z-index:100;background:var(--bg-secondary);border-bottom:1px solid var(--border-color);box-shadow:var(--shadow-md);}
+        .header-content{display:flex;align-items:center;justify-content:space-between;padding:12px 24px;max-width:1400px;margin:0 auto;}
+        .logo{display:flex;align-items:center;gap:12px;}
+        .logo-icon{filter:drop-shadow(0 0 8px rgba(0,232,252,0.4));animation:logoPulse 3s ease-in-out infinite;}
+        @keyframes logoPulse{0%,100%{filter:drop-shadow(0 0 8px rgba(0,232,252,0.4));}50%{filter:drop-shadow(0 0 16px rgba(0,232,252,0.6));}}
+        .logo h1{font-family:'Orbitron',sans-serif;font-size:18px;font-weight:700;color:var(--accent-primary);letter-spacing:3px;text-shadow:0 0 20px rgba(0,232,252,0.3);}
+        .user-section{display:flex;align-items:center;gap:10px;}
+        .user-name{font-size:14px;color:var(--text-secondary);font-weight:500;letter-spacing:1px;text-transform:uppercase;}
+        .btn-small{background:var(--bg-tertiary);border:1px solid var(--border-color);color:var(--text-secondary);padding:6px 8px;border-radius:var(--radius-sm);cursor:pointer;transition:var(--transition);display:flex;align-items:center;}
+        .btn-small:hover{background:var(--bg-card-hover);color:var(--accent-primary);border-color:var(--accent-primary);}
+        .api-status{font-size:11px;padding:3px 8px;border-radius:3px;letter-spacing:1px;font-weight:600;}
+        .api-status.online{background:var(--success-bg);color:var(--success);border:1px solid rgba(76,175,80,0.27);}
+        .api-status.offline{background:var(--warning-bg);color:var(--warning);border:1px solid rgba(255,152,0,0.27);}
+        .backup-indicator{font-size:10px;padding:2px 6px;border-radius:3px;letter-spacing:0.5px;font-weight:600;cursor:help;}
+        .backup-indicator.ok{background:var(--success-bg);color:var(--success);}
+
+        .nav-tabs{display:flex;max-width:1400px;margin:0 auto;padding:0 24px;}
+        .nav-tab{display:flex;align-items:center;gap:8px;padding:12px 24px;background:none;border:none;color:var(--text-muted);font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:600;letter-spacing:2px;cursor:pointer;transition:var(--transition);position:relative;text-transform:uppercase;}
+        .nav-tab::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:transparent;transition:var(--transition);}
+        .nav-tab:hover{color:var(--text-secondary);}
+        .nav-tab.active{color:var(--accent-primary);}
+        .nav-tab.active::after{background:var(--accent-primary);box-shadow:0 0 10px rgba(0,232,252,0.5);}
+        .nav-tab svg{opacity:0.7;}
+        .nav-tab.active svg{opacity:1;stroke:var(--accent-primary);}
+
+        .tab-content{display:none;max-width:1400px;margin:0 auto;padding:20px 24px;animation:fadeIn 0.3s ease;}
+        .tab-content.active{display:block;}
+        @keyframes fadeIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+
+        .controls-bar{display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap;}
+        .search-box{display:flex;align-items:center;gap:10px;background:var(--bg-input);border:1px solid var(--border-color);border-radius:var(--radius-md);padding:10px 16px;flex:1;min-width:200px;transition:var(--transition);}
+        .search-box:focus-within{border-color:var(--accent-primary);box-shadow:0 0 0 2px var(--accent-glow);}
+        .search-box svg{stroke:var(--text-muted);flex-shrink:0;}
+        .search-box input{background:none;border:none;color:var(--text-primary);font-family:'Rajdhani',sans-serif;font-size:15px;width:100%;outline:none;}
+        .search-box input::placeholder{color:var(--text-muted);}
+        .filter-group{display:flex;gap:8px;flex-wrap:wrap;}
+        .filter-select{background:var(--bg-input);border:1px solid var(--border-color);color:var(--text-primary);font-family:'Rajdhani',sans-serif;font-size:14px;padding:10px 14px;border-radius:var(--radius-md);cursor:pointer;transition:var(--transition);outline:none;}
+        .filter-select:hover,.filter-select:focus{border-color:var(--accent-primary);}
+        .filter-select option{background:var(--bg-secondary);color:var(--text-primary);}
+
+        .btn-primary{display:flex;align-items:center;gap:8px;padding:10px 20px;background:linear-gradient(135deg,var(--accent-primary),var(--accent-secondary));color:var(--bg-primary);border:none;border-radius:var(--radius-md);font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:var(--transition);text-transform:uppercase;white-space:nowrap;}
+        .btn-primary:hover{box-shadow:var(--shadow-glow);transform:translateY(-1px);}
+        .btn-primary:active{transform:translateY(0);}
+        .btn-secondary{display:flex;align-items:center;gap:8px;padding:10px 16px;background:var(--bg-tertiary);color:var(--text-secondary);border:1px solid var(--border-color);border-radius:var(--radius-md);font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:var(--transition);}
+        .btn-secondary:hover{background:var(--bg-card-hover);color:var(--accent-primary);border-color:var(--accent-primary);}
+        .btn-warning{background:linear-gradient(135deg,var(--warning),#e68900);}
+        .btn-danger-outline{background:transparent;border:1px solid var(--danger);color:var(--danger);padding:6px 12px;border-radius:var(--radius-sm);font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:var(--transition);}
+        .btn-danger-outline:hover{background:var(--danger-bg);}
+
+        .recipes-stats,.inventory-stats{display:flex;gap:16px;margin-bottom:20px;flex-wrap:wrap;}
+        .stat-card{background:var(--bg-card);border:1px solid var(--border-color);border-radius:var(--radius-md);padding:14px 20px;display:flex;align-items:center;gap:12px;flex:1;min-width:150px;}
+        .stat-icon{width:40px;height:40px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;font-size:20px;}
+        .stat-icon.blue{background:var(--accent-glow);}
+        .stat-icon.green{background:var(--success-bg);}
+        .stat-icon.orange{background:var(--warning-bg);}
+        .stat-icon.gold{background:var(--gold-bg);}
+        .stat-info{display:flex;flex-direction:column;}
+        .stat-value{font-family:'Orbitron',sans-serif;font-size:22px;font-weight:700;color:var(--text-primary);line-height:1;}
+        .stat-label{font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;}
+
+        .recipes-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;}
+        .recipe-card{background:var(--bg-card);border:1px solid var(--border-color);border-radius:var(--radius-lg);overflow:hidden;transition:var(--transition);cursor:pointer;}
+        .recipe-card:hover{border-color:var(--accent-primary);box-shadow:var(--shadow-glow);transform:translateY(-2px);}
+        .recipe-card.prime{border-color:rgba(196,162,78,0.2);}
+        .recipe-card.prime:hover{border-color:var(--prime-gold);box-shadow:0 0 20px rgba(196,162,78,0.15);}
+        .recipe-card-header{padding:16px 18px 10px;display:flex;justify-content:space-between;align-items:flex-start;}
+        .recipe-name{font-size:18px;font-weight:700;color:var(--text-primary);letter-spacing:0.5px;}
+        .recipe-card.prime .recipe-name{color:var(--prime-gold-light);}
+        .recipe-category{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1.5px;margin-top:2px;}
+        .recipe-badge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:3px;letter-spacing:1px;text-transform:uppercase;white-space:nowrap;}
+        .recipe-badge.complete{background:var(--success-bg);color:var(--success);border:1px solid rgba(76,175,80,0.27);}
+        .recipe-badge.partial{background:var(--warning-bg);color:var(--warning);border:1px solid rgba(255,152,0,0.27);}
+        .recipe-badge.none{background:var(--danger-bg);color:var(--danger);border:1px solid rgba(244,67,54,0.27);}
+        .recipe-card-body{padding:6px 18px 14px;}
+        .recipe-progress-bar{width:100%;height:6px;background:var(--bg-primary);border-radius:3px;overflow:hidden;margin-bottom:10px;}
+        .recipe-progress-fill{height:100%;border-radius:3px;transition:width 0.5s ease;}
+        .recipe-progress-fill.green{background:linear-gradient(90deg,var(--success),#66bb6a);}
+        .recipe-progress-fill.orange{background:linear-gradient(90deg,var(--warning),#ffb74d);}
+        .recipe-progress-fill.red{background:linear-gradient(90deg,var(--danger),#e57373);}
+        .recipe-progress-fill.gold{background:linear-gradient(90deg,var(--prime-gold),var(--prime-gold-light));}
+        .recipe-items-preview{display:flex;flex-wrap:wrap;gap:6px;}
+        .recipe-item-tag{font-size:12px;padding:3px 8px;border-radius:3px;background:var(--bg-primary);border:1px solid var(--border-color);color:var(--text-muted);display:flex;align-items:center;gap:4px;}
+        .recipe-item-tag.owned{border-color:rgba(76,175,80,0.27);color:var(--success);background:var(--success-bg);}
+        .recipe-item-tag .check{font-size:10px;}
+        .recipe-counter{font-family:'Orbitron',sans-serif;font-size:13px;color:var(--text-secondary);text-align:right;margin-top:6px;}
+
+        .inventory-list{display:flex;flex-direction:column;gap:8px;}
+        .inventory-item{background:var(--bg-card);border:1px solid var(--border-color);border-radius:var(--radius-md);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;transition:var(--transition);}
+        .inventory-item:hover{border-color:var(--border-accent);background:var(--bg-card-hover);}
+        .inventory-item-info{display:flex;flex-direction:column;flex:1;min-width:0;}
+        .inventory-item-name{font-size:16px;font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+        .inventory-item-parent{font-size:11px;color:var(--accent-secondary);margin-top:1px;}
+        .inventory-item-recipes{font-size:12px;color:var(--text-muted);margin-top:2px;}
+        .inventory-item-actions{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+        .quantity-control{display:flex;align-items:center;background:var(--bg-primary);border:1px solid var(--border-color);border-radius:var(--radius-sm);overflow:hidden;}
+        .quantity-btn{width:32px;height:32px;background:var(--bg-tertiary);border:none;color:var(--text-secondary);font-size:18px;cursor:pointer;transition:var(--transition);display:flex;align-items:center;justify-content:center;font-family:'Rajdhani',sans-serif;font-weight:700;}
+        .quantity-btn:hover{background:var(--accent-primary);color:var(--bg-primary);}
+        .quantity-value{width:40px;text-align:center;font-family:'Orbitron',sans-serif;font-size:14px;color:var(--accent-primary);font-weight:600;}
+
+        .modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:1000;animation:modalFade 0.2s ease;padding:20px;}
+        .modal.hidden{display:none;}
+        @keyframes modalFade{from{opacity:0;}to{opacity:1;}}
+        .modal-content{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:var(--radius-lg);width:100%;max-width:600px;max-height:80vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:var(--shadow-lg);animation:modalSlide 0.3s ease;}
+        @keyframes modalSlide{from{transform:translateY(20px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+        .modal-header{display:flex;align-items:center;justify-content:space-between;padding:18px 24px;border-bottom:1px solid var(--border-color);}
+        .modal-header h2{font-family:'Orbitron',sans-serif;font-size:16px;color:var(--accent-primary);letter-spacing:2px;}
+        .modal-close{background:none;border:none;color:var(--text-muted);font-size:28px;cursor:pointer;transition:var(--transition);line-height:1;padding:0 4px;}
+        .modal-close:hover{color:var(--danger);}
+        .modal-body{padding:20px 24px;overflow-y:auto;}
+        .modal-search{margin-bottom:16px;}
+
+        .login-modal{text-align:center;padding:40px;max-width:420px;}
+        .modal-logo{margin-bottom:20px;}
+        .modal-logo svg{filter:drop-shadow(0 0 12px rgba(0,232,252,0.5));}
+        .login-modal h2{font-family:'Orbitron',sans-serif;color:var(--accent-primary);font-size:20px;letter-spacing:3px;margin-bottom:8px;}
+        .login-modal p{color:var(--text-muted);margin-bottom:24px;font-size:15px;}
+        .login-modal input{width:100%;background:var(--bg-input);border:1px solid var(--border-color);color:var(--text-primary);font-family:'Rajdhani',sans-serif;font-size:16px;padding:12px 16px;border-radius:var(--radius-md);margin-bottom:16px;outline:none;text-align:center;letter-spacing:1px;transition:var(--transition);}
+        .login-modal input:focus{border-color:var(--accent-primary);box-shadow:0 0 0 2px var(--accent-glow);}
+        .login-modal .btn-primary{width:100%;justify-content:center;padding:14px;font-size:16px;}
+
+        .add-item-list{display:flex;flex-direction:column;gap:6px;max-height:400px;overflow-y:auto;}
+        .add-item-option{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--bg-card);border:1px solid var(--border-color);border-radius:var(--radius-sm);cursor:pointer;transition:var(--transition);gap:8px;}
+        .add-item-option:hover{border-color:var(--accent-primary);background:var(--bg-card-hover);}
+        .add-item-option.in-inventory{border-color:rgba(76,175,80,0.2);background:var(--success-bg);}
+        .add-item-option-name{font-size:14px;font-weight:600;color:var(--text-primary);}
+        .add-item-option-sub{font-size:11px;color:var(--text-muted);}
+        .add-item-option-btn{padding:4px 12px;border-radius:var(--radius-sm);font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;border:none;cursor:pointer;transition:var(--transition);text-transform:uppercase;letter-spacing:0.5px;flex-shrink:0;}
+        .add-item-option-btn.add{background:var(--accent-primary);color:var(--bg-primary);}
+        .add-item-option-btn.remove{background:var(--danger-bg);color:var(--danger);border:1px solid rgba(244,67,54,0.2);}
+
+        .recipe-detail-modal{max-width:650px;}
+        .recipe-detail-category{font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:4px;}
+        .recipe-detail-progress{display:flex;align-items:center;gap:12px;margin-bottom:20px;padding:14px;background:var(--bg-card);border-radius:var(--radius-md);border:1px solid var(--border-color);}
+        .recipe-detail-progress-bar{flex:1;height:10px;background:var(--bg-primary);border-radius:5px;overflow:hidden;}
+        .recipe-detail-progress-fill{height:100%;border-radius:5px;transition:width 0.5s ease;}
+        .recipe-detail-progress-text{font-family:'Orbitron',sans-serif;font-size:16px;color:var(--text-primary);white-space:nowrap;}
+        .recipe-detail-items{display:flex;flex-direction:column;gap:8px;}
+        .recipe-detail-item{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--bg-card);border:1px solid var(--border-color);border-radius:var(--radius-md);transition:var(--transition);flex-wrap:wrap;gap:8px;}
+        .recipe-detail-item.owned{border-color:rgba(76,175,80,0.27);background:var(--success-bg);}
+        .recipe-detail-item-name{font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px;}
+        .recipe-detail-item-status{font-size:12px;font-weight:700;padding:3px 10px;border-radius:3px;letter-spacing:0.5px;text-transform:uppercase;}
+        .recipe-detail-item-status.owned{background:var(--success-bg);color:var(--success);}
+        .recipe-detail-item-status.missing{background:var(--danger-bg);color:var(--danger);}
+        .toggle-btn{padding:4px 12px;border-radius:var(--radius-sm);font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;border:none;cursor:pointer;transition:var(--transition);text-transform:uppercase;margin-left:8px;}
+        .toggle-btn.add-inv{background:var(--accent-primary);color:var(--bg-primary);}
+        .toggle-btn.remove-inv{background:var(--danger-bg);color:var(--danger);border:1px solid rgba(244,67,54,0.2);}
+
+        .import-export-section{margin-bottom:24px;}
+        .import-export-section:last-child{margin-bottom:0;}
+        .import-export-section h3{font-family:'Orbitron',sans-serif;font-size:13px;color:var(--accent-primary);letter-spacing:2px;margin-bottom:8px;}
+        .import-export-section p{font-size:13px;color:var(--text-muted);margin-bottom:10px;}
+        .data-textarea{width:100%;height:100px;background:var(--bg-input);border:1px solid var(--border-color);color:var(--text-primary);font-family:monospace;font-size:12px;padding:10px;border-radius:var(--radius-md);resize:vertical;margin-bottom:10px;outline:none;}
+        .data-textarea:focus{border-color:var(--accent-primary);}
+
+        .backup-info{background:var(--bg-card);border:1px solid var(--border-color);border-radius:var(--radius-md);padding:14px;margin-bottom:20px;}
+        .backup-info h4{font-family:'Orbitron',sans-serif;font-size:12px;color:var(--accent-primary);letter-spacing:1px;margin-bottom:8px;}
+        .backup-info p{font-size:12px;color:var(--text-muted);margin-bottom:4px;}
+        .backup-slots{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+        .backup-slot-btn{padding:6px 14px;border-radius:var(--radius-sm);font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:600;border:1px solid var(--border-color);background:var(--bg-tertiary);color:var(--text-secondary);cursor:pointer;transition:var(--transition);}
+        .backup-slot-btn:hover{border-color:var(--accent-primary);color:var(--accent-primary);}
+
+        .toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);padding:12px 24px;background:var(--bg-secondary);border:1px solid var(--accent-primary);border-radius:var(--radius-md);color:var(--text-primary);font-size:14px;font-weight:600;z-index:2000;box-shadow:var(--shadow-glow),var(--shadow-md);animation:toastIn 0.3s ease;white-space:nowrap;max-width:90vw;overflow:hidden;text-overflow:ellipsis;}
+        .toast.hidden{display:none;}
+        .toast.success{border-color:var(--success);}
+        .toast.error{border-color:var(--danger);}
+        @keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(20px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}
+
+        .empty-state{text-align:center;padding:60px 20px;color:var(--text-muted);}
+        .empty-state h3{font-size:18px;margin-bottom:8px;color:var(--text-secondary);}
+        .empty-state p{font-size:14px;}
+
+        @media(max-width:768px){
+            .header-content{padding:10px 16px;}.logo h1{font-size:13px;letter-spacing:1.5px;}
+            .nav-tabs{padding:0 16px;}.nav-tab{padding:10px 16px;font-size:13px;letter-spacing:1px;}
+            .tab-content{padding:16px;}.controls-bar{flex-direction:column;}.search-box{width:100%;}
+            .filter-group{width:100%;}.filter-select{flex:1;}.btn-add{flex:1;justify-content:center;}
+            .recipes-grid{grid-template-columns:1fr;}.recipes-stats,.inventory-stats{flex-direction:column;}
+            .stat-card{min-width:auto;}.modal-content{max-height:90vh;}.login-modal{padding:30px 24px;}
+        }
+        @media(max-width:480px){.logo-icon{width:30px;height:30px;}.logo h1{font-size:11px;}.user-name{display:none;}.backup-indicator{display:none;}}
     </style>
 </head>
 <body>
 
-<!-- ===== LOADING SCREEN ===== -->
 <div id="loadingScreen" class="loading-screen">
-    <svg class="loading-logo" viewBox="0 0 60 60">
-        <polygon points="30,3 57,30 30,57 3,30" fill="none" stroke="#00e8fc" stroke-width="2"/>
-        <polygon points="30,12 48,30 30,48 12,30" fill="none" stroke="#00e8fc" stroke-width="1.5"/>
-        <circle cx="30" cy="30" r="6" fill="#00e8fc"/>
-    </svg>
+    <svg class="loading-logo" viewBox="0 0 60 60"><polygon points="30,3 57,30 30,57 3,30" fill="none" stroke="#00e8fc" stroke-width="2"/><polygon points="30,12 48,30 30,48 12,30" fill="none" stroke="#00e8fc" stroke-width="1.5"/><circle cx="30" cy="30" r="6" fill="#00e8fc"/></svg>
     <div class="loading-text">CARREGANDO DADOS</div>
-    <div class="loading-bar-container">
-        <div id="loadingBar" class="loading-bar"></div>
-    </div>
-    <div id="loadingStatus" class="loading-status">Conectando à API do Warframe...</div>
+    <div class="loading-bar-container"><div id="loadingBar" class="loading-bar"></div></div>
+    <div id="loadingStatus" class="loading-status">Inicializando...</div>
     <div id="loadingError" class="loading-error" style="display:none;"></div>
 </div>
 
 <div id="app" style="display:none;">
-    <!-- Header -->
     <header class="header">
         <div class="header-content">
             <div class="logo">
-                <svg class="logo-icon" viewBox="0 0 40 40" width="40" height="40">
-                    <polygon points="20,2 38,20 20,38 2,20" fill="none" stroke="#00e8fc" stroke-width="2"/>
-                    <polygon points="20,8 32,20 20,32 8,20" fill="none" stroke="#00e8fc" stroke-width="1.5"/>
-                    <circle cx="20" cy="20" r="4" fill="#00e8fc"/>
-                </svg>
+                <svg class="logo-icon" viewBox="0 0 40 40" width="40" height="40"><polygon points="20,2 38,20 20,38 2,20" fill="none" stroke="#00e8fc" stroke-width="2"/><polygon points="20,8 32,20 20,32 8,20" fill="none" stroke="#00e8fc" stroke-width="1.5"/><circle cx="20" cy="20" r="4" fill="#00e8fc"/></svg>
                 <h1>WARFRAME CRAFT TRACKER</h1>
             </div>
             <div class="user-section">
+                <span id="backupBadge" class="backup-indicator ok" title="Dados salvos automaticamente">💾 SALVO</span>
                 <span id="apiStatusBadge" class="api-status online">API ✓</span>
                 <span id="userName" class="user-name"></span>
-                <button id="btnChangeUser" class="btn-small" title="Trocar usuário">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                        <circle cx="12" cy="7" r="4"/>
-                    </svg>
-                </button>
+                <button id="btnChangeUser" class="btn-small" title="Trocar usuário"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></button>
             </div>
         </div>
         <nav class="nav-tabs">
-            <button class="nav-tab active" data-tab="recipes">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                    <polyline points="14 2 14 8 20 8"/>
-                    <line x1="16" y1="13" x2="8" y2="13"/>
-                    <line x1="16" y1="17" x2="8" y2="17"/>
-                </svg>
-                RECEITAS
-            </button>
-            <button class="nav-tab" data-tab="inventory">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-                    <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
-                    <line x1="12" y1="22.08" x2="12" y2="12"/>
-                </svg>
-                INVENTÁRIO
-            </button>
+            <button class="nav-tab active" data-tab="recipes"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>RECEITAS</button>
+            <button class="nav-tab" data-tab="inventory"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>INVENTÁRIO</button>
         </nav>
     </header>
 
-    <!-- Login Modal -->
     <div id="loginModal" class="modal hidden">
         <div class="modal-content login-modal">
-            <div class="modal-logo">
-                <svg viewBox="0 0 60 60" width="60" height="60">
-                    <polygon points="30,3 57,30 30,57 3,30" fill="none" stroke="#00e8fc" stroke-width="2"/>
-                    <polygon points="30,12 48,30 30,48 12,30" fill="none" stroke="#00e8fc" stroke-width="1.5"/>
-                    <circle cx="30" cy="30" r="6" fill="#00e8fc"/>
-                </svg>
-            </div>
+            <div class="modal-logo"><svg viewBox="0 0 60 60" width="60" height="60"><polygon points="30,3 57,30 30,57 3,30" fill="none" stroke="#00e8fc" stroke-width="2"/><polygon points="30,12 48,30 30,48 12,30" fill="none" stroke="#00e8fc" stroke-width="1.5"/><circle cx="30" cy="30" r="6" fill="#00e8fc"/></svg></div>
             <h2>BEM-VINDO, TENNO</h2>
             <p>Digite seu nome para começar</p>
             <input type="text" id="loginInput" placeholder="Seu nome de Tenno..." maxlength="20" autocomplete="off">
@@ -1155,914 +266,826 @@
         </div>
     </div>
 
-    <!-- Recipes Tab -->
     <main id="recipesTab" class="tab-content active">
         <div class="controls-bar">
-            <div class="search-box">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="11" cy="11" r="8"/>
-                    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                </svg>
-                <input type="text" id="recipeSearch" placeholder="Buscar receita...">
-            </div>
+            <div class="search-box"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" id="recipeSearch" placeholder="Buscar receita..."></div>
             <div class="filter-group">
-                <select id="categoryFilter" class="filter-select">
-                    <option value="all">Todas Categorias</option>
-                </select>
-                <select id="progressFilter" class="filter-select">
-                    <option value="all">Todo Progresso</option>
-                    <option value="complete">Completo</option>
-                    <option value="partial">Parcial</option>
-                    <option value="none">Nenhum</option>
-                </select>
+                <select id="categoryFilter" class="filter-select"><option value="all">Todas Categorias</option></select>
+                <select id="progressFilter" class="filter-select"><option value="all">Todo Progresso</option><option value="complete">Completo</option><option value="partial">Parcial</option><option value="none">Nenhum</option></select>
             </div>
         </div>
         <div class="recipes-stats" id="recipesStats"></div>
         <div class="recipes-grid" id="recipesGrid"></div>
     </main>
 
-    <!-- Inventory Tab -->
     <main id="inventoryTab" class="tab-content">
         <div class="controls-bar">
-            <div class="search-box">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="11" cy="11" r="8"/>
-                    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                </svg>
-                <input type="text" id="inventorySearch" placeholder="Buscar item no inventário...">
-            </div>
+            <div class="search-box"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" id="inventorySearch" placeholder="Buscar item no inventário..."></div>
             <div class="filter-group">
-                <button id="btnAddItem" class="btn-primary btn-add">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="12" y1="5" x2="12" y2="19"/>
-                        <line x1="5" y1="12" x2="19" y2="12"/>
-                    </svg>
-                    ADICIONAR ITEM
-                </button>
-                <button id="btnImportExport" class="btn-secondary" title="Importar/Exportar dados">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                        <polyline points="7 10 12 15 17 10"/>
-                        <line x1="12" y1="15" x2="12" y2="3"/>
-                    </svg>
-                </button>
-                <button id="btnRefreshApi" class="btn-secondary" title="Atualizar dados da API">
-                    🔄
-                </button>
+                <button id="btnAddItem" class="btn-primary btn-add"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>ADICIONAR ITEM</button>
+                <button id="btnImportExport" class="btn-secondary" title="Backup / Importar / Exportar">💾</button>
+                <button id="btnRefreshApi" class="btn-secondary" title="Atualizar dados da API">🔄</button>
             </div>
         </div>
         <div class="inventory-stats" id="inventoryStats"></div>
         <div class="inventory-list" id="inventoryList"></div>
     </main>
 
-    <!-- Add Item Modal -->
     <div id="addItemModal" class="modal hidden">
         <div class="modal-content">
-            <div class="modal-header">
-                <h2>ADICIONAR ITEM</h2>
-                <button class="modal-close" data-close="addItemModal">&times;</button>
-            </div>
+            <div class="modal-header"><h2>ADICIONAR ITEM</h2><button class="modal-close" data-close="addItemModal">&times;</button></div>
             <div class="modal-body">
-                <div class="search-box modal-search">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="11" cy="11" r="8"/>
-                        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                    </svg>
-                    <input type="text" id="addItemSearch" placeholder="Buscar item para adicionar...">
-                </div>
+                <div class="search-box modal-search"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" id="addItemSearch" placeholder="Buscar componente..."></div>
                 <div class="add-item-list" id="addItemList"></div>
             </div>
         </div>
     </div>
 
-    <!-- Recipe Detail Modal -->
     <div id="recipeDetailModal" class="modal hidden">
         <div class="modal-content recipe-detail-modal">
-            <div class="modal-header">
-                <h2 id="recipeDetailTitle"></h2>
-                <button class="modal-close" data-close="recipeDetailModal">&times;</button>
-            </div>
+            <div class="modal-header"><h2 id="recipeDetailTitle"></h2><button class="modal-close" data-close="recipeDetailModal">&times;</button></div>
             <div class="modal-body" id="recipeDetailBody"></div>
         </div>
     </div>
 
-    <!-- Import/Export Modal -->
     <div id="importExportModal" class="modal hidden">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>IMPORTAR / EXPORTAR</h2>
-                <button class="modal-close" data-close="importExportModal">&times;</button>
-            </div>
+        <div class="modal-content" style="max-width:650px;">
+            <div class="modal-header"><h2>DADOS & BACKUP</h2><button class="modal-close" data-close="importExportModal">&times;</button></div>
             <div class="modal-body">
-                <div class="import-export-section">
-                    <h3>Exportar</h3>
-                    <p>Copie o texto abaixo para backup:</p>
-                    <textarea id="exportData" class="data-textarea" readonly></textarea>
-                    <button id="btnCopyExport" class="btn-primary">COPIAR</button>
-                </div>
-                <div class="import-export-section">
-                    <h3>Importar</h3>
-                    <p>Cole seus dados salvos:</p>
-                    <textarea id="importData" class="data-textarea" placeholder="Cole seus dados aqui..."></textarea>
-                    <button id="btnImport" class="btn-primary btn-warning">IMPORTAR</button>
-                </div>
+                <div id="backupInfoSection" class="backup-info"></div>
+                <div class="import-export-section"><h3>Exportar</h3><p>Copie para backup manual:</p><textarea id="exportData" class="data-textarea" readonly></textarea><button id="btnCopyExport" class="btn-primary">📋 COPIAR</button></div>
+                <div class="import-export-section"><h3>Importar</h3><p>Cole dados salvos anteriormente:</p><textarea id="importData" class="data-textarea" placeholder="Cole seus dados aqui..."></textarea><button id="btnImport" class="btn-primary btn-warning">⬆️ IMPORTAR</button></div>
+                <div class="import-export-section"><h3>Restaurar Backup Automático</h3><p>Backups são criados automaticamente a cada alteração:</p><div id="backupSlots" class="backup-slots"></div></div>
             </div>
         </div>
     </div>
 
-    <!-- Toast -->
     <div id="toast" class="toast hidden"></div>
 </div>
 
 <script>
-// =====================================================
-// ===== WARFRAME CRAFT TRACKER - FULL APPLICATION =====
-// =====================================================
-
-(function() {
+(function(){
 'use strict';
 
-// ===== GLOBAL STATE =====
-let RECIPES = [];
-let ALL_COMPONENTS = [];
+/* ============================================
+   GLOBAL STATE
+   ============================================ */
+let RECIPES = [];          // [{name, category, components:[{id,displayName}], wikiaUrl, description}]
+let ALL_COMPONENTS = [];   // [{id, displayName, parentName}]
+let COMP_MAP = {};         // id -> {displayName, parentName}
 let API_LOADED = false;
 let API_SOURCE = '';
+const MAX_BACKUPS = 5;
 
-// ===== API DATA FETCHER =====
+/* ============================================
+   API PARSER - THE CORE FIX
+   Each component gets a UNIQUE ID:
+   "ParentName::ComponentName"
+   e.g. "Ash Prime::Blueprint", "Ash Prime::Chassis"
+   This ensures Ash Prime Chassis ≠ Atlas Prime Chassis
+   ============================================ */
 class WarframeAPI {
-
-    // Primary: warframe-items GitHub (most complete)
     static async fetchFromGitHub() {
-        const url = 'https://raw.githubusercontent.com/WFCD/warframe-items/master/data/json/All.json';
-        const response = await fetch(url);
-        if (!response.ok) throw new Error(`GitHub HTTP ${response.status}`);
-        return await response.json();
+        const r = await fetch('https://raw.githubusercontent.com/WFCD/warframe-items/master/data/json/All.json');
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
     }
-
-    // Secondary: WarframeStat.us API
     static async fetchFromWarframeStat() {
-        const url = 'https://api.warframestat.us/items';
-        const response = await fetch(url);
-        if (!response.ok) throw new Error(`WarframeStat HTTP ${response.status}`);
-        return await response.json();
+        const r = await fetch('https://api.warframestat.us/items');
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
     }
 
-    // Map category from API data
     static mapCategory(item) {
-        const cat = (item.category || '').toLowerCase();
-        const type = (item.type || '').toLowerCase();
-        const name = item.name || '';
-        const isPrime = name.includes('Prime');
-
-        if (cat === 'warframes' || type === 'warframe') {
-            return isPrime ? 'Warframe Prime' : 'Warframe';
-        }
-        if (cat === 'primary' || type === 'primary') {
-            return isPrime ? 'Arma Primária Prime' : 'Arma Primária';
-        }
-        if (cat === 'secondary' || type === 'secondary') {
-            return isPrime ? 'Arma Secundária Prime' : 'Arma Secundária';
-        }
-        if (cat === 'melee' || type === 'melee') {
-            return isPrime ? 'Arma Corpo a Corpo Prime' : 'Arma Corpo a Corpo';
-        }
-        if (cat === 'sentinels' || type === 'sentinel') {
-            return isPrime ? 'Sentinela Prime' : 'Sentinela';
-        }
-        if (cat === 'archwing' || type === 'archwing') {
-            return isPrime ? 'Archwing Prime' : 'Archwing';
-        }
-        if (cat === 'pets' || type === 'pet') return 'Companheiro';
-        if (cat === 'necramechs') return 'Necramech';
+        const c = (item.category || '').toLowerCase();
+        const t = (item.type || '').toLowerCase();
+        const n = item.name || '';
+        const p = n.includes('Prime');
+        if (c === 'warframes' || t === 'warframe') return p ? 'Warframe Prime' : 'Warframe';
+        if (c === 'primary' || t === 'primary') return p ? 'Arma Primária Prime' : 'Arma Primária';
+        if (c === 'secondary' || t === 'secondary') return p ? 'Arma Secundária Prime' : 'Arma Secundária';
+        if (c === 'melee' || t === 'melee') return p ? 'Corpo a Corpo Prime' : 'Corpo a Corpo';
+        if (c === 'sentinels' || t === 'sentinel') return p ? 'Sentinela Prime' : 'Sentinela';
+        if (c === 'archwing' || t === 'archwing') return p ? 'Archwing Prime' : 'Archwing';
+        if (c === 'pets' || t === 'pet') return 'Companheiro';
+        if (c === 'necramechs') return 'Necramech';
         return 'Outro';
     }
 
-    // Parse recipes from raw API items
+    static isGenericResource(name) {
+        const lower = name.toLowerCase();
+        const resources = [
+            'credits','orokin cell','neurodes','morphics','control module','gallium',
+            'neural sensors','neurode','plastids','polymer bundle','rubedo','salvage',
+            'ferrite','nano spores','alloy plate','circuits','oxium','cryotic',
+            'argon crystal','tellurium','nitain extract','forma','kuva','void traces',
+            'detonite injector','fieldron','mutagen mass','pherliac pod','thermia',
+            'cubic diodes','carbides','copernics','bracoids','stellated necrathene',
+            'thaumica','namalon','hesperon','travocyte','pustulite','ganglion',
+            'scintillant','entrati lanthorn','voidplume quill','voidplume down',
+            'voidplume crest','voidplume pinion','lucent teroglobe',
+            'star crimzian','star amarast','star veridos','star azureus',
+            'amarast','azureus','veridos','crimzian','tralok eyes','murkray liver',
+            'norg brain','cuthol tendon','breath of the eidolon','heart of the eidolon',
+            'sentirum','nyth','radian sentirum','marquise veridos','marquise thyst',
+            'esher devar','orb vallis bounty','plains of eidolon bounty',
+            'morphic transformer','neuroptik mass','systems override',
+            'chassis storage','control modules'
+        ];
+        return resources.includes(lower);
+    }
+
+    /**
+     * CORE PARSING LOGIC
+     * Each component becomes UNIQUE to its parent recipe.
+     * Component ID format: "ParentName::ComponentRawName"
+     * Display name: "ParentName ComponentRawName"  (e.g. "Ash Prime Chassis")
+     */
     static parseRecipes(items) {
         const recipes = [];
-        const seenNames = new Set();
+        const seen = new Set();
+        const validCats = ['warframes','primary','secondary','melee','sentinels','archwing','necramechs','pets'];
+        const validTypes = ['warframe','primary','secondary','melee','sentinel','archwing','pet','necramech','arch-gun','arch-melee'];
 
         items.forEach(item => {
-            // Must have components to be craftable
-            if (!item.components || item.components.length === 0) return;
-            if (!item.name) return;
+            if (!item.components || !item.components.length || !item.name) return;
+            const c = (item.category || '').toLowerCase();
+            const t = (item.type || '').toLowerCase();
+            if (!validCats.includes(c) && !validTypes.includes(t)) return;
+            if (seen.has(item.name)) return;
+            seen.add(item.name);
 
-            // Skip resources, mods, relics, etc.
-            const cat = (item.category || '').toLowerCase();
-            const type = (item.type || '').toLowerCase();
-            const validCats = ['warframes', 'primary', 'secondary', 'melee',
-                             'sentinels', 'archwing', 'necramechs', 'pets'];
-            const validTypes = ['warframe', 'primary', 'secondary', 'melee',
-                              'sentinel', 'archwing', 'pet', 'necramech',
-                              'arch-gun', 'arch-melee'];
+            const parentName = item.name;
 
-            if (!validCats.includes(cat) && !validTypes.includes(type)) return;
+            // Build unique component list
+            const components = [];
+            item.components.forEach(comp => {
+                const rawName = comp.name || comp.itemName || '';
+                if (!rawName) return;
+                if (/^\d+$/.test(rawName.trim())) return;
+                if (this.isGenericResource(rawName)) return;
 
-            // Skip duplicates
-            if (seenNames.has(item.name)) return;
-            seenNames.add(item.name);
+                // Create unique ID and display name
+                const id = `${parentName}::${rawName}`;
 
-            // Extract component names
-            const components = item.components
-                .map(c => c.name || c.itemName || '')
-                .filter(name => {
-                    if (!name) return false;
-                    const lower = name.toLowerCase();
-                    // Skip generic resources
-                    if (['credits', 'orokin cell', 'neurodes', 'morphics',
-                         'control module', 'gallium', 'neural sensors',
-                         'neurode', 'plastids', 'polymer bundle', 'rubedo',
-                         'salvage', 'ferrite', 'nano spores', 'alloy plate',
-                         'circuits', 'oxium', 'cryotic', 'argon crystal',
-                         'tellurium', 'nitain extract', 'forma',
-                         'kuva', 'void traces'].some(r => lower === r.toLowerCase())) {
-                        return false;
-                    }
-                    // Skip quantities-only entries
-                    if (/^\d+$/.test(name.trim())) return false;
-                    return true;
-                });
+                // Display name: if the component already contains the parent name, use as-is
+                // Otherwise, prepend parent name
+                let displayName;
+                if (rawName.toLowerCase().includes(parentName.toLowerCase()) ||
+                    parentName.toLowerCase().includes(rawName.toLowerCase())) {
+                    displayName = rawName;
+                } else {
+                    displayName = `${parentName} ${rawName}`;
+                }
 
-            // Must have at least 2 components to be a meaningful recipe
+                components.push({ id, displayName, rawName });
+            });
+
             if (components.length < 2) return;
 
-            const mappedCategory = this.mapCategory(item);
-
             recipes.push({
-                name: item.name,
-                category: mappedCategory,
+                name: parentName,
+                category: this.mapCategory(item),
                 components: components,
-                imageName: item.imageName || null,
                 wikiaUrl: item.wikiaUrl || null,
-                wikiaThumbnail: item.wikiaThumbnail || null,
                 description: item.description || ''
             });
         });
 
-        // Sort by name
         recipes.sort((a, b) => a.name.localeCompare(b.name));
-
         return recipes;
     }
 
-    // Get all unique components from recipes
-    static extractAllComponents(recipes) {
-        const comps = new Set();
-        recipes.forEach(r => r.components.forEach(c => comps.add(c)));
-        return Array.from(comps).sort();
+    static buildComponentMaps(recipes) {
+        const allComps = [];
+        const compMap = {};
+
+        recipes.forEach(recipe => {
+            recipe.components.forEach(comp => {
+                if (!compMap[comp.id]) {
+                    compMap[comp.id] = {
+                        displayName: comp.displayName,
+                        parentName: recipe.name,
+                        rawName: comp.rawName
+                    };
+                    allComps.push({
+                        id: comp.id,
+                        displayName: comp.displayName,
+                        parentName: recipe.name
+                    });
+                }
+            });
+        });
+
+        allComps.sort((a, b) => a.displayName.localeCompare(b.displayName));
+        return { allComps, compMap };
     }
 
-    // Populate category filter dropdown
     static getCategories(recipes) {
-        const cats = new Set();
-        recipes.forEach(r => cats.add(r.category));
-        return Array.from(cats).sort();
+        const s = new Set();
+        recipes.forEach(r => s.add(r.category));
+        return Array.from(s).sort();
     }
 }
 
-// ===== INVENTORY MANAGER =====
-class InventoryManager {
-    constructor() {
-        this.currentUser = null;
-        this.inventory = {};
+/* ============================================
+   STORAGE MANAGER
+   ============================================ */
+class StorageManager {
+    static setLS(key, val) {
+        try { localStorage.setItem(key, typeof val === 'string' ? val : JSON.stringify(val)); return true; }
+        catch (e) { return false; }
     }
+    static getLS(key) {
+        try { return localStorage.getItem(key); } catch (e) { return null; }
+    }
+    static _openDB() {
+        return new Promise((resolve, reject) => {
+            const req = indexedDB.open('WFCraftTracker', 1);
+            req.onupgradeneeded = e => {
+                const db = e.target.result;
+                if (!db.objectStoreNames.contains('data')) db.createObjectStore('data', { keyPath: 'key' });
+            };
+            req.onsuccess = e => resolve(e.target.result);
+            req.onerror = e => reject(e.target.error);
+        });
+    }
+    static async saveIDB(key, value) {
+        try {
+            const db = await this._openDB();
+            const tx = db.transaction('data', 'readwrite');
+            tx.objectStore('data').put({ key, value, ts: Date.now() });
+            await new Promise((r, j) => { tx.oncomplete = r; tx.onerror = j; });
+        } catch (e) { }
+    }
+    static async loadIDB(key) {
+        try {
+            const db = await this._openDB();
+            const tx = db.transaction('data', 'readonly');
+            const req = tx.objectStore('data').get(key);
+            return new Promise(r => { req.onsuccess = () => r(req.result ? req.result.value : null); req.onerror = () => r(null); });
+        } catch (e) { return null; }
+    }
+}
 
-    _getKey() { return `wf_inventory_${this.currentUser}`; }
+/* ============================================
+   INVENTORY MANAGER
+   Now uses component IDs (ParentName::CompName)
+   ============================================ */
+class InventoryManager {
+    constructor() { this.currentUser = null; this.inventory = {}; this._dirty = false; this._lastHash = ''; }
+    _key() { return `wf_inv2_${this.currentUser}`; }
+    _bkKey(s) { return `wf_bk2_${this.currentUser}_${s}`; }
+    _hash() { return JSON.stringify(this.inventory); }
 
     loadUser(username) {
         this.currentUser = username.toLowerCase().trim();
-        const data = localStorage.getItem(this._getKey());
-        try { this.inventory = data ? JSON.parse(data) : {}; }
-        catch(e) { this.inventory = {}; }
-        localStorage.setItem('wf_last_user', this.currentUser);
+        const d = StorageManager.getLS(this._key());
+        try { this.inventory = d ? JSON.parse(d) : {}; } catch (e) { this.inventory = {}; }
+        if (!Object.keys(this.inventory).length) this._recoverIDB();
+        StorageManager.setLS('wf_last_user', this.currentUser);
+        this._lastHash = this._hash();
+        this._dirty = false;
+    }
+
+    async _recoverIDB() {
+        const d = await StorageManager.loadIDB(`inv_${this.currentUser}`);
+        if (d && Object.keys(d).length) { this.inventory = d; this.save(); }
     }
 
     save() {
         if (!this.currentUser) return;
-        localStorage.setItem(this._getKey(), JSON.stringify(this.inventory));
+        const j = JSON.stringify(this.inventory);
+        StorageManager.setLS(this._key(), j);
+        StorageManager.saveIDB(`inv_${this.currentUser}`, this.inventory);
+        if (j !== this._lastHash) { this._dirty = true; this._lastHash = j; }
+        StorageManager.setLS(`wf_lastsave_${this.currentUser}`, Date.now().toString());
     }
 
-    hasItem(name) { return (this.inventory[name] || 0) > 0; }
-    getQuantity(name) { return this.inventory[name] || 0; }
-
-    addItem(name, qty = 1) {
-        this.inventory[name] = (this.inventory[name] || 0) + qty;
-        this.save();
+    createBackup() {
+        if (!this.currentUser || !Object.keys(this.inventory).length) return;
+        const bd = JSON.stringify({ inventory: this.inventory, ts: Date.now(), count: Object.keys(this.inventory).length });
+        for (let i = MAX_BACKUPS - 1; i > 0; i--) {
+            const prev = StorageManager.getLS(this._bkKey(i - 1));
+            if (prev) StorageManager.setLS(this._bkKey(i), prev);
+        }
+        StorageManager.setLS(this._bkKey(0), bd);
+        this._dirty = false;
     }
 
-    removeItem(name) {
-        delete this.inventory[name];
-        this.save();
+    getBackups() {
+        const bks = [];
+        for (let i = 0; i < MAX_BACKUPS; i++) {
+            const d = StorageManager.getLS(this._bkKey(i));
+            if (d) { try { const p = JSON.parse(d); p.slot = i; bks.push(p); } catch (e) { } }
+        }
+        return bks;
     }
 
-    setQuantity(name, qty) {
-        if (qty <= 0) delete this.inventory[name];
-        else this.inventory[name] = qty;
-        this.save();
+    restoreBackup(slot) {
+        const d = StorageManager.getLS(this._bkKey(slot));
+        if (!d) return false;
+        try { const p = JSON.parse(d); if (p.inventory) { this.createBackup(); this.inventory = p.inventory; this.save(); return true; } } catch (e) { }
+        return false;
     }
+
+    getLastSave() { const t = StorageManager.getLS(`wf_lastsave_${this.currentUser}`); return t ? parseInt(t) : null; }
+
+    // All methods use component ID (e.g. "Ash Prime::Blueprint")
+    hasItem(id) { return (this.inventory[id] || 0) > 0; }
+    getQty(id) { return this.inventory[id] || 0; }
+
+    addItem(id, q = 1) { this.inventory[id] = (this.inventory[id] || 0) + q; this.save(); }
+    removeItem(id) { delete this.inventory[id]; this.save(); }
+    setQty(id, q) { if (q <= 0) delete this.inventory[id]; else this.inventory[id] = q; this.save(); }
 
     getAllItems() {
         return Object.entries(this.inventory)
             .filter(([_, q]) => q > 0)
-            .map(([name, quantity]) => ({ name, quantity }))
-            .sort((a, b) => a.name.localeCompare(b.name));
+            .map(([id, quantity]) => ({ id, quantity }))
+            .sort((a, b) => {
+                const da = COMP_MAP[a.id]?.displayName || a.id;
+                const db = COMP_MAP[b.id]?.displayName || b.id;
+                return da.localeCompare(db);
+            });
     }
 
     getRecipeProgress(recipe) {
         const total = recipe.components.length;
         let owned = 0;
         const details = recipe.components.map(comp => {
-            const has = this.hasItem(comp);
+            const has = this.hasItem(comp.id);
             if (has) owned++;
-            return { name: comp, owned: has, quantity: this.getQuantity(comp) };
+            return { id: comp.id, displayName: comp.displayName, rawName: comp.rawName, owned: has, quantity: this.getQty(comp.id) };
         });
         return { total, owned, details, percentage: total > 0 ? (owned / total) * 100 : 0 };
     }
 
-    exportData() {
-        return JSON.stringify({
-            user: this.currentUser,
-            inventory: this.inventory,
-            exportDate: new Date().toISOString()
-        }, null, 2);
+    findRecipesUsing(compId) {
+        return RECIPES.filter(r => r.components.some(c => c.id === compId));
     }
 
-    importData(jsonStr) {
+    exportData() {
+        return JSON.stringify({ user: this.currentUser, inventory: this.inventory, count: Object.keys(this.inventory).length, date: new Date().toISOString(), version: 3 }, null, 2);
+    }
+
+    importData(json) {
         try {
-            const data = JSON.parse(jsonStr);
-            if (data.inventory && typeof data.inventory === 'object') {
-                this.inventory = data.inventory;
+            const d = JSON.parse(json);
+            if (d.inventory && typeof d.inventory === 'object') {
+                this.createBackup();
+                this.inventory = d.inventory;
                 this.save();
                 return true;
             }
-            return false;
-        } catch(e) { return false; }
+        } catch (e) { }
+        return false;
     }
 
-    findRecipesUsing(compName) {
-        return RECIPES.filter(r => r.components.includes(compName));
-    }
-
-    static getLastUser() { return localStorage.getItem('wf_last_user'); }
+    isDirty() { return this._dirty; }
+    static getLastUser() { return StorageManager.getLS('wf_last_user'); }
 }
 
-// ===== INITIALIZE MANAGERS =====
-const inventoryMgr = new InventoryManager();
-
-// ===== DOM ELEMENTS =====
+/* ============================================
+   INIT
+   ============================================ */
+const inv = new InventoryManager();
 const $ = id => document.getElementById(id);
 const el = {
-    loadingScreen: $('loadingScreen'),
-    loadingBar: $('loadingBar'),
-    loadingStatus: $('loadingStatus'),
-    loadingError: $('loadingError'),
-    app: $('app'),
-    loginModal: $('loginModal'),
-    loginInput: $('loginInput'),
-    btnLogin: $('btnLogin'),
-    userName: $('userName'),
-    btnChangeUser: $('btnChangeUser'),
-    apiStatusBadge: $('apiStatusBadge'),
-    recipesTab: $('recipesTab'),
-    inventoryTab: $('inventoryTab'),
-    recipeSearch: $('recipeSearch'),
-    categoryFilter: $('categoryFilter'),
-    progressFilter: $('progressFilter'),
-    recipesGrid: $('recipesGrid'),
-    recipesStats: $('recipesStats'),
-    inventorySearch: $('inventorySearch'),
-    inventoryList: $('inventoryList'),
-    inventoryStats: $('inventoryStats'),
-    btnAddItem: $('btnAddItem'),
-    addItemModal: $('addItemModal'),
-    addItemSearch: $('addItemSearch'),
-    addItemList: $('addItemList'),
-    recipeDetailModal: $('recipeDetailModal'),
-    recipeDetailTitle: $('recipeDetailTitle'),
-    recipeDetailBody: $('recipeDetailBody'),
-    btnImportExport: $('btnImportExport'),
-    importExportModal: $('importExportModal'),
-    exportData: $('exportData'),
-    importData: $('importData'),
-    btnCopyExport: $('btnCopyExport'),
-    btnImport: $('btnImport'),
-    btnRefreshApi: $('btnRefreshApi'),
+    loadingScreen: $('loadingScreen'), loadingBar: $('loadingBar'),
+    loadingStatus: $('loadingStatus'), loadingError: $('loadingError'),
+    app: $('app'), loginModal: $('loginModal'), loginInput: $('loginInput'),
+    btnLogin: $('btnLogin'), userName: $('userName'), btnChangeUser: $('btnChangeUser'),
+    apiStatusBadge: $('apiStatusBadge'), backupBadge: $('backupBadge'),
+    recipeSearch: $('recipeSearch'), categoryFilter: $('categoryFilter'),
+    progressFilter: $('progressFilter'), recipesGrid: $('recipesGrid'),
+    recipesStats: $('recipesStats'), inventorySearch: $('inventorySearch'),
+    inventoryList: $('inventoryList'), inventoryStats: $('inventoryStats'),
+    btnAddItem: $('btnAddItem'), addItemModal: $('addItemModal'),
+    addItemSearch: $('addItemSearch'), addItemList: $('addItemList'),
+    recipeDetailModal: $('recipeDetailModal'), recipeDetailTitle: $('recipeDetailTitle'),
+    recipeDetailBody: $('recipeDetailBody'), btnImportExport: $('btnImportExport'),
+    importExportModal: $('importExportModal'), exportData: $('exportData'),
+    importData: $('importData'), btnCopyExport: $('btnCopyExport'),
+    btnImport: $('btnImport'), btnRefreshApi: $('btnRefreshApi'),
+    backupInfoSection: $('backupInfoSection'), backupSlots: $('backupSlots'),
     toast: $('toast'),
 };
 
 let toastTimeout = null;
 
-// ===== UTILITY =====
-function showToast(msg, type = 'success') {
-    el.toast.textContent = msg;
-    el.toast.className = `toast ${type}`;
+function showToast(m, t = 'success') {
+    el.toast.textContent = m; el.toast.className = `toast ${t}`;
     el.toast.classList.remove('hidden');
     if (toastTimeout) clearTimeout(toastTimeout);
     toastTimeout = setTimeout(() => el.toast.classList.add('hidden'), 2500);
 }
 
-function normalize(str) {
-    return str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+function normalize(s) { return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim(); }
+
+function setProgress(p, s) { el.loadingBar.style.width = p + '%'; el.loadingStatus.textContent = s; }
+
+function timeAgo(ts) {
+    if (!ts) return 'Nunca';
+    const d = Date.now() - ts;
+    if (d < 60000) return 'Agora mesmo';
+    if (d < 3600000) return `${Math.floor(d / 60000)}min atrás`;
+    if (d < 86400000) return `${Math.floor(d / 3600000)}h atrás`;
+    return new Date(ts).toLocaleString('pt-BR');
 }
 
-function setLoadingProgress(percent, status) {
-    el.loadingBar.style.width = percent + '%';
-    el.loadingStatus.textContent = status;
-}
-
-// ===== CACHE MANAGEMENT =====
-function cacheApiData(recipes) {
+/* ============================================
+   CACHE
+   ============================================ */
+function cacheRecipes(recipes) {
     try {
-        localStorage.setItem('wf_recipes_cache', JSON.stringify(recipes));
-        localStorage.setItem('wf_recipes_cache_time', Date.now().toString());
-    } catch(e) {
-        console.warn('Cache storage failed:', e);
-    }
+        StorageManager.setLS('wf_rcache2', JSON.stringify(recipes));
+        StorageManager.setLS('wf_rcache2_t', Date.now().toString());
+    } catch (e) { }
 }
-
-function getCachedData() {
+function getCachedRecipes() {
     try {
-        const cached = localStorage.getItem('wf_recipes_cache');
-        const cacheTime = localStorage.getItem('wf_recipes_cache_time');
-        if (cached && cacheTime) {
-            const age = Date.now() - parseInt(cacheTime);
-            // Cache valid for 24 hours
-            if (age < 24 * 60 * 60 * 1000) {
-                return JSON.parse(cached);
-            }
-        }
-    } catch(e) {}
+        const c = StorageManager.getLS('wf_rcache2');
+        const t = StorageManager.getLS('wf_rcache2_t');
+        if (c && t && Date.now() - parseInt(t) < 24 * 3600000) return JSON.parse(c);
+    } catch (e) { }
     return null;
 }
 
-// ===== LOAD DATA FROM API =====
-async function loadDataFromAPI(forceRefresh = false) {
-    setLoadingProgress(5, 'Verificando cache local...');
-
-    // Try cache first
-    if (!forceRefresh) {
-        const cached = getCachedData();
-        if (cached && cached.length > 0) {
-            setLoadingProgress(80, `Cache encontrado: ${cached.length} receitas`);
+/* ============================================
+   LOAD API DATA
+   ============================================ */
+async function loadAPI(force = false) {
+    setProgress(5, 'Verificando cache...');
+    if (!force) {
+        const cached = getCachedRecipes();
+        if (cached && cached.length) {
             RECIPES = cached;
-            ALL_COMPONENTS = WarframeAPI.extractAllComponents(RECIPES);
-            API_SOURCE = 'cache';
-            API_LOADED = true;
-            setLoadingProgress(100, 'Dados carregados do cache!');
+            const maps = WarframeAPI.buildComponentMaps(RECIPES);
+            ALL_COMPONENTS = maps.allComps; COMP_MAP = maps.compMap;
+            API_SOURCE = 'cache'; API_LOADED = true;
+            setProgress(100, `${RECIPES.length} receitas (cache)`);
             return true;
         }
     }
-
-    // Try GitHub (primary source)
-    setLoadingProgress(10, 'Conectando ao GitHub WFCD...');
+    setProgress(10, 'Conectando ao GitHub WFCD...');
     try {
-        setLoadingProgress(20, 'Baixando banco de dados completo...');
-        const rawItems = await WarframeAPI.fetchFromGitHub();
-        setLoadingProgress(60, `Processando ${rawItems.length} itens...`);
-
-        RECIPES = WarframeAPI.parseRecipes(rawItems);
-        ALL_COMPONENTS = WarframeAPI.extractAllComponents(RECIPES);
-        API_SOURCE = 'github';
-        API_LOADED = true;
-
-        setLoadingProgress(90, `${RECIPES.length} receitas encontradas!`);
-        cacheApiData(RECIPES);
-        setLoadingProgress(100, 'Dados carregados com sucesso!');
+        setProgress(20, 'Baixando dados...');
+        const raw = await WarframeAPI.fetchFromGitHub();
+        setProgress(60, `Processando ${raw.length} itens...`);
+        RECIPES = WarframeAPI.parseRecipes(raw);
+        const maps = WarframeAPI.buildComponentMaps(RECIPES);
+        ALL_COMPONENTS = maps.allComps; COMP_MAP = maps.compMap;
+        API_SOURCE = 'github'; API_LOADED = true;
+        setProgress(90, `${RECIPES.length} receitas!`);
+        cacheRecipes(RECIPES);
+        setProgress(100, 'Carregado!');
         return true;
-    } catch(err1) {
-        console.warn('GitHub fetch failed:', err1);
-        setLoadingProgress(30, 'GitHub indisponível. Tentando API alternativa...');
-    }
+    } catch (e) { console.warn('GitHub:', e); }
 
-    // Try WarframeStat.us (backup)
+    setProgress(30, 'Tentando API alternativa...');
     try {
-        setLoadingProgress(40, 'Conectando ao WarframeStat.us...');
-        const rawItems = await WarframeAPI.fetchFromWarframeStat();
-        setLoadingProgress(60, `Processando ${rawItems.length} itens...`);
-
-        RECIPES = WarframeAPI.parseRecipes(rawItems);
-        ALL_COMPONENTS = WarframeAPI.extractAllComponents(RECIPES);
-        API_SOURCE = 'warframestat';
-        API_LOADED = true;
-
-        setLoadingProgress(90, `${RECIPES.length} receitas encontradas!`);
-        cacheApiData(RECIPES);
-        setLoadingProgress(100, 'Dados carregados com sucesso!');
+        setProgress(40, 'Conectando WarframeStat.us...');
+        const raw = await WarframeAPI.fetchFromWarframeStat();
+        setProgress(60, `Processando ${raw.length} itens...`);
+        RECIPES = WarframeAPI.parseRecipes(raw);
+        const maps = WarframeAPI.buildComponentMaps(RECIPES);
+        ALL_COMPONENTS = maps.allComps; COMP_MAP = maps.compMap;
+        API_SOURCE = 'warframestat'; API_LOADED = true;
+        cacheRecipes(RECIPES);
+        setProgress(100, 'Carregado!');
         return true;
-    } catch(err2) {
-        console.warn('WarframeStat fetch failed:', err2);
-    }
+    } catch (e) { console.warn('WFStat:', e); }
 
-    // Both failed - try older cache (even if expired)
     try {
-        const oldCache = localStorage.getItem('wf_recipes_cache');
-        if (oldCache) {
-            RECIPES = JSON.parse(oldCache);
-            ALL_COMPONENTS = WarframeAPI.extractAllComponents(RECIPES);
-            API_SOURCE = 'cache-expired';
-            API_LOADED = true;
-            setLoadingProgress(100, 'Usando cache antigo (sem internet)');
+        const old = StorageManager.getLS('wf_rcache2');
+        if (old) {
+            RECIPES = JSON.parse(old);
+            const maps = WarframeAPI.buildComponentMaps(RECIPES);
+            ALL_COMPONENTS = maps.allComps; COMP_MAP = maps.compMap;
+            API_SOURCE = 'cache-expired'; API_LOADED = true;
+            setProgress(100, 'Cache antigo');
             return true;
         }
-    } catch(e) {}
-
+    } catch (e) { }
     return false;
 }
 
-// ===== POPULATE CATEGORY FILTER =====
-function populateCategoryFilter() {
+/* ============================================
+   UI HELPERS
+   ============================================ */
+function populateCategories() {
     const cats = WarframeAPI.getCategories(RECIPES);
     el.categoryFilter.innerHTML = '<option value="all">Todas Categorias</option>';
-    cats.forEach(cat => {
-        const opt = document.createElement('option');
-        opt.value = cat;
-        opt.textContent = cat;
-        el.categoryFilter.appendChild(opt);
-    });
+    cats.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; el.categoryFilter.appendChild(o); });
 }
 
-// ===== RENDER ALL =====
-function renderAll() {
-    renderRecipes();
-    renderRecipeStats();
-    renderInventory();
-    renderInventoryStats();
+function updateApiStatus() {
+    if (!API_LOADED) { el.apiStatusBadge.className = 'api-status offline'; el.apiStatusBadge.textContent = 'ERRO'; return; }
+    if (API_SOURCE === 'cache-expired') {
+        el.apiStatusBadge.className = 'api-status offline'; el.apiStatusBadge.textContent = 'OFFLINE';
+    } else {
+        el.apiStatusBadge.className = 'api-status online';
+        el.apiStatusBadge.textContent = API_SOURCE === 'cache' ? 'CACHE ✓' : 'API ✓';
+    }
+    el.apiStatusBadge.title = `${RECIPES.length} receitas | ${ALL_COMPONENTS.length} componentes | ${API_SOURCE}`;
 }
 
-// ===== RECIPES RENDERING =====
+function updateBackupBadge() {
+    const ls = inv.getLastSave();
+    el.backupBadge.className = 'backup-indicator ok';
+    el.backupBadge.textContent = ls ? '💾 SALVO' : '⚠️ VAZIO';
+    el.backupBadge.title = ls ? `Último save: ${timeAgo(ls)}` : 'Sem dados salvos';
+}
+
+function renderAll() { renderRecipes(); renderRecipeStats(); renderInventory(); renderInventoryStats(); updateBackupBadge(); }
+
+/* ============================================
+   RECIPES
+   ============================================ */
 function renderRecipes() {
-    const search = normalize(el.recipeSearch.value);
-    const catFilter = el.categoryFilter.value;
-    const progFilter = el.progressFilter.value;
+    const s = normalize(el.recipeSearch.value);
+    const cf = el.categoryFilter.value;
+    const pf = el.progressFilter.value;
 
-    let filtered = RECIPES.filter(recipe => {
-        if (search && !normalize(recipe.name).includes(search)) return false;
-        if (catFilter !== 'all' && recipe.category !== catFilter) return false;
-        if (progFilter !== 'all') {
-            const p = inventoryMgr.getRecipeProgress(recipe).percentage;
-            if (progFilter === 'complete' && p !== 100) return false;
-            if (progFilter === 'partial' && (p === 0 || p === 100)) return false;
-            if (progFilter === 'none' && p !== 0) return false;
+    let f = RECIPES.filter(r => {
+        if (s && !normalize(r.name).includes(s)) return false;
+        if (cf !== 'all' && r.category !== cf) return false;
+        if (pf !== 'all') {
+            const p = inv.getRecipeProgress(r).percentage;
+            if (pf === 'complete' && p !== 100) return false;
+            if (pf === 'partial' && (p === 0 || p === 100)) return false;
+            if (pf === 'none' && p !== 0) return false;
         }
         return true;
     });
 
-    // Sort: partial first (most progress), then none, then complete
-    filtered.sort((a, b) => {
-        const pa = inventoryMgr.getRecipeProgress(a).percentage;
-        const pb = inventoryMgr.getRecipeProgress(b).percentage;
-        // Complete items go to the end
+    f.sort((a, b) => {
+        const pa = inv.getRecipeProgress(a).percentage;
+        const pb = inv.getRecipeProgress(b).percentage;
         if (pa === 100 && pb !== 100) return 1;
         if (pb === 100 && pa !== 100) return -1;
-        // Higher progress first
         if (pb !== pa) return pb - pa;
         return a.name.localeCompare(b.name);
     });
 
     el.recipesGrid.innerHTML = '';
-
-    if (filtered.length === 0) {
-        el.recipesGrid.innerHTML = `
-            <div class="empty-state" style="grid-column:1/-1;">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                </svg>
-                <h3>Nenhuma receita encontrada</h3>
-                <p>Ajuste os filtros de busca</p>
-            </div>`;
+    if (!f.length) {
+        el.recipesGrid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><h3>Nenhuma receita encontrada</h3><p>Ajuste os filtros</p></div>`;
         return;
     }
 
-    filtered.forEach(recipe => {
-        const progress = inventoryMgr.getRecipeProgress(recipe);
+    f.forEach(recipe => {
+        const pr = inv.getRecipeProgress(recipe);
         const isPrime = recipe.name.includes('Prime');
-        const pct = progress.percentage;
+        const pct = pr.percentage;
+        let bc, bt;
+        if (pct === 100) { bc = 'complete'; bt = 'Completo'; }
+        else if (pct > 0) { bc = 'partial'; bt = 'Parcial'; }
+        else { bc = 'none'; bt = 'Faltam todos'; }
+        let fc;
+        if (isPrime) fc = pct === 100 ? 'gold' : pct > 0 ? 'orange' : 'red';
+        else fc = pct === 100 ? 'green' : pct > 0 ? 'orange' : 'red';
 
-        let badgeClass, badgeText;
-        if (pct === 100) { badgeClass = 'complete'; badgeText = 'Completo'; }
-        else if (pct > 0) { badgeClass = 'partial'; badgeText = 'Parcial'; }
-        else { badgeClass = 'none'; badgeText = 'Faltam todos'; }
-
-        let fillClass;
-        if (isPrime) fillClass = pct === 100 ? 'gold' : pct > 0 ? 'orange' : 'red';
-        else fillClass = pct === 100 ? 'green' : pct > 0 ? 'orange' : 'red';
-
-        const tags = progress.details.map(d => {
-            let short = d.name;
-            // Shorten: remove the parent name
-            short = short.replace(recipe.name, '').trim();
-            if (short.length > 25) short = short.substring(0, 22) + '...';
-            if (!short) short = d.name;
-            return `<span class="recipe-item-tag${d.owned ? ' owned' : ''}">${d.owned ? '<span class="check">✓</span>' : ''}${short}</span>`;
+        const tags = pr.details.map(d => {
+            let label = d.rawName || d.displayName;
+            if (label.length > 20) label = label.substring(0, 17) + '...';
+            return `<span class="recipe-item-tag${d.owned ? ' owned' : ''}">${d.owned ? '<span class="check">✓</span>' : ''}${label}</span>`;
         }).join('');
 
         const card = document.createElement('div');
         card.className = `recipe-card${isPrime ? ' prime' : ''}`;
         card.innerHTML = `
             <div class="recipe-card-header">
-                <div>
-                    <div class="recipe-name">${recipe.name}</div>
-                    <div class="recipe-category">${recipe.category}</div>
-                </div>
-                <span class="recipe-badge ${badgeClass}">${badgeText}</span>
+                <div><div class="recipe-name">${recipe.name}</div><div class="recipe-category">${recipe.category}</div></div>
+                <span class="recipe-badge ${bc}">${bt}</span>
             </div>
             <div class="recipe-card-body">
-                <div class="recipe-progress-bar">
-                    <div class="recipe-progress-fill ${fillClass}" style="width:${pct}%"></div>
-                </div>
+                <div class="recipe-progress-bar"><div class="recipe-progress-fill ${fc}" style="width:${pct}%"></div></div>
                 <div class="recipe-items-preview">${tags}</div>
-                <div class="recipe-counter">${progress.owned}/${progress.total}</div>
+                <div class="recipe-counter">${pr.owned}/${pr.total}</div>
             </div>`;
-
-        card.addEventListener('click', () => openRecipeDetail(recipe));
+        card.addEventListener('click', () => openDetail(recipe));
         el.recipesGrid.appendChild(card);
     });
 }
 
 function renderRecipeStats() {
-    let total = RECIPES.length, complete = 0, partial = 0, totalComp = 0, ownedComp = 0;
+    let total = RECIPES.length, comp = 0, part = 0, tc = 0, oc = 0;
     RECIPES.forEach(r => {
-        const p = inventoryMgr.getRecipeProgress(r);
-        totalComp += p.total;
-        ownedComp += p.owned;
-        if (p.percentage === 100) complete++;
-        else if (p.percentage > 0) partial++;
+        const p = inv.getRecipeProgress(r);
+        tc += p.total; oc += p.owned;
+        if (p.percentage === 100) comp++;
+        else if (p.percentage > 0) part++;
     });
-
     el.recipesStats.innerHTML = `
-        <div class="stat-card">
-            <div class="stat-icon blue">📋</div>
-            <div class="stat-info">
-                <div class="stat-value">${total}</div>
-                <div class="stat-label">Total Receitas</div>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon green">✅</div>
-            <div class="stat-info">
-                <div class="stat-value">${complete}</div>
-                <div class="stat-label">Completas</div>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon orange">🔶</div>
-            <div class="stat-info">
-                <div class="stat-value">${partial}</div>
-                <div class="stat-label">Parciais</div>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon gold">🧩</div>
-            <div class="stat-info">
-                <div class="stat-value">${ownedComp}/${totalComp}</div>
-                <div class="stat-label">Componentes</div>
-            </div>
-        </div>`;
+        <div class="stat-card"><div class="stat-icon blue">📋</div><div class="stat-info"><div class="stat-value">${total}</div><div class="stat-label">Total</div></div></div>
+        <div class="stat-card"><div class="stat-icon green">✅</div><div class="stat-info"><div class="stat-value">${comp}</div><div class="stat-label">Completas</div></div></div>
+        <div class="stat-card"><div class="stat-icon orange">🔶</div><div class="stat-info"><div class="stat-value">${part}</div><div class="stat-label">Parciais</div></div></div>
+        <div class="stat-card"><div class="stat-icon gold">🧩</div><div class="stat-info"><div class="stat-value">${oc}/${tc}</div><div class="stat-label">Componentes</div></div></div>`;
 }
 
-// ===== RECIPE DETAIL =====
-function openRecipeDetail(recipe) {
-    const progress = inventoryMgr.getRecipeProgress(recipe);
+/* ============================================
+   RECIPE DETAIL
+   ============================================ */
+function openDetail(recipe) {
+    const pr = inv.getRecipeProgress(recipe);
     const isPrime = recipe.name.includes('Prime');
-    const pct = progress.percentage;
+    const pct = pr.percentage;
+    let fc;
+    if (isPrime) fc = pct === 100 ? 'gold' : pct > 0 ? 'orange' : 'red';
+    else fc = pct === 100 ? 'green' : pct > 0 ? 'orange' : 'red';
 
-    let fillClass;
-    if (isPrime) fillClass = pct === 100 ? 'gold' : pct > 0 ? 'orange' : 'red';
-    else fillClass = pct === 100 ? 'green' : pct > 0 ? 'orange' : 'red';
-
-    let html = `
+    let h = `
         <div class="recipe-detail-info">
             <div class="recipe-detail-category">${recipe.category}</div>
             ${recipe.description ? `<p style="color:var(--text-muted);font-size:13px;margin-top:6px;">${recipe.description}</p>` : ''}
         </div>
         <div class="recipe-detail-progress">
-            <div class="recipe-detail-progress-bar">
-                <div class="recipe-detail-progress-fill ${fillClass}" style="width:${pct}%"></div>
-            </div>
-            <div class="recipe-detail-progress-text">${progress.owned}/${progress.total}</div>
+            <div class="recipe-detail-progress-bar"><div class="recipe-detail-progress-fill ${fc}" style="width:${pct}%"></div></div>
+            <div class="recipe-detail-progress-text">${pr.owned}/${pr.total}</div>
         </div>
         <div class="recipe-detail-items">`;
 
-    progress.details.forEach(item => {
-        html += `
-            <div class="recipe-detail-item ${item.owned ? 'owned' : 'missing'}">
+    pr.details.forEach(it => {
+        h += `
+            <div class="recipe-detail-item ${it.owned ? 'owned' : 'missing'}">
                 <div class="recipe-detail-item-name">
-                    ${item.owned ? '✓' : '✗'} ${item.name}
-                    ${item.owned && item.quantity > 1 ? `<span style="color:var(--text-muted);font-size:12px;">(x${item.quantity})</span>` : ''}
+                    ${it.owned ? '✓' : '✗'} ${it.displayName}
+                    ${it.owned && it.quantity > 1 ? `<span style="color:var(--text-muted);font-size:12px;">(x${it.quantity})</span>` : ''}
                 </div>
                 <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                    <span class="recipe-detail-item-status ${item.owned ? 'owned' : 'missing'}">
-                        ${item.owned ? 'No inventário' : 'Faltando'}
-                    </span>
-                    <button class="toggle-btn ${item.owned ? 'remove-inv' : 'add-inv'}"
-                            data-component="${item.name}"
-                            data-action="${item.owned ? 'remove' : 'add'}">
-                        ${item.owned ? 'Remover' : 'Adicionar'}
+                    <span class="recipe-detail-item-status ${it.owned ? 'owned' : 'missing'}">${it.owned ? 'No inventário' : 'Faltando'}</span>
+                    <button class="toggle-btn ${it.owned ? 'remove-inv' : 'add-inv'}" data-comp-id="${it.id}" data-action="${it.owned ? 'remove' : 'add'}">
+                        ${it.owned ? 'Remover' : 'Adicionar'}
                     </button>
                 </div>
             </div>`;
     });
-
-    html += `</div>`;
-
-    if (recipe.wikiaUrl) {
-        html += `<div style="margin-top:16px;text-align:center;">
-            <a href="${recipe.wikiaUrl}" target="_blank" rel="noopener"
-               style="color:var(--accent-primary);font-size:13px;text-decoration:none;">
-               📖 Ver na Wiki do Warframe
-            </a>
-        </div>`;
-    }
+    h += `</div>`;
+    if (recipe.wikiaUrl) h += `<div style="margin-top:16px;text-align:center;"><a href="${recipe.wikiaUrl}" target="_blank" rel="noopener" style="color:var(--accent-primary);font-size:13px;text-decoration:none;">📖 Wiki</a></div>`;
 
     el.recipeDetailTitle.textContent = recipe.name;
-    el.recipeDetailBody.innerHTML = html;
+    el.recipeDetailBody.innerHTML = h;
     el.recipeDetailModal.classList.remove('hidden');
 
-    // Attach toggle buttons
     el.recipeDetailBody.querySelectorAll('.toggle-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
+        btn.addEventListener('click', e => {
             e.stopPropagation();
-            const comp = btn.dataset.component;
-            if (btn.dataset.action === 'add') {
-                inventoryMgr.addItem(comp, 1);
-                showToast(`${comp} adicionado!`);
-            } else {
-                inventoryMgr.removeItem(comp);
-                showToast(`${comp} removido`, 'error');
-            }
-            openRecipeDetail(recipe);
-            renderAll();
+            const id = btn.dataset.compId;
+            const displayName = COMP_MAP[id]?.displayName || id;
+            if (btn.dataset.action === 'add') { inv.addItem(id, 1); showToast(`${displayName} adicionado!`); }
+            else { inv.removeItem(id); showToast(`${displayName} removido`, 'error'); }
+            openDetail(recipe); renderAll();
         });
     });
 }
 
-// ===== INVENTORY =====
+/* ============================================
+   INVENTORY
+   ============================================ */
 function renderInventory() {
-    const search = normalize(el.inventorySearch.value);
-    let items = inventoryMgr.getAllItems();
-    if (search) items = items.filter(i => normalize(i.name).includes(search));
+    const s = normalize(el.inventorySearch.value);
+    let items = inv.getAllItems();
+    if (s) items = items.filter(i => {
+        const dn = COMP_MAP[i.id]?.displayName || i.id;
+        const pn = COMP_MAP[i.id]?.parentName || '';
+        return normalize(dn).includes(s) || normalize(pn).includes(s);
+    });
 
     el.inventoryList.innerHTML = '';
-
-    if (items.length === 0) {
-        el.inventoryList.innerHTML = `
-            <div class="empty-state">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-                </svg>
-                <h3>Inventário vazio</h3>
-                <p>Clique em "Adicionar Item" para cadastrar componentes</p>
-            </div>`;
+    if (!items.length) {
+        el.inventoryList.innerHTML = `<div class="empty-state"><h3>Inventário vazio</h3><p>Clique em "Adicionar Item" para cadastrar componentes</p></div>`;
         return;
     }
 
     items.forEach(item => {
-        const recipes = inventoryMgr.findRecipesUsing(item.name);
-        const recipesText = recipes.length > 0
-            ? `Usado em: ${recipes.slice(0, 3).map(r => r.name).join(', ')}${recipes.length > 3 ? ` +${recipes.length - 3}` : ''}`
-            : 'Item avulso';
+        const info = COMP_MAP[item.id] || { displayName: item.id, parentName: '?' };
+        const recipes = inv.findRecipesUsing(item.id);
+        const rt = recipes.length ? `Receita: ${recipes.map(r => r.name).join(', ')}` : 'Sem receita associada';
 
         const div = document.createElement('div');
         div.className = 'inventory-item';
         div.innerHTML = `
             <div class="inventory-item-info">
-                <div class="inventory-item-name">${item.name}</div>
-                <div class="inventory-item-recipes">${recipesText}</div>
+                <div class="inventory-item-name">${info.displayName}</div>
+                <div class="inventory-item-parent">📦 ${info.parentName}</div>
+                <div class="inventory-item-recipes">${rt}</div>
             </div>
             <div class="inventory-item-actions">
                 <div class="quantity-control">
-                    <button class="quantity-btn minus" data-item="${item.name}">−</button>
+                    <button class="quantity-btn minus">−</button>
                     <span class="quantity-value">${item.quantity}</span>
-                    <button class="quantity-btn plus" data-item="${item.name}">+</button>
+                    <button class="quantity-btn plus">+</button>
                 </div>
-                <button class="btn-danger-outline delete-btn" data-item="${item.name}">✗</button>
+                <button class="btn-danger-outline delete-btn">✗</button>
             </div>`;
-
         div.querySelector('.minus').addEventListener('click', () => {
-            if (item.quantity <= 1) {
-                inventoryMgr.removeItem(item.name);
-                showToast(`${item.name} removido`, 'error');
-            } else {
-                inventoryMgr.setQuantity(item.name, item.quantity - 1);
-            }
+            if (item.quantity <= 1) { inv.removeItem(item.id); showToast(`${info.displayName} removido`, 'error'); }
+            else inv.setQty(item.id, item.quantity - 1);
             renderAll();
         });
-
-        div.querySelector('.plus').addEventListener('click', () => {
-            inventoryMgr.setQuantity(item.name, item.quantity + 1);
-            renderAll();
-        });
-
-        div.querySelector('.delete-btn').addEventListener('click', () => {
-            inventoryMgr.removeItem(item.name);
-            showToast(`${item.name} removido`, 'error');
-            renderAll();
-        });
-
+        div.querySelector('.plus').addEventListener('click', () => { inv.setQty(item.id, item.quantity + 1); renderAll(); });
+        div.querySelector('.delete-btn').addEventListener('click', () => { inv.removeItem(item.id); showToast(`${info.displayName} removido`, 'error'); renderAll(); });
         el.inventoryList.appendChild(div);
     });
 }
 
 function renderInventoryStats() {
-    const items = inventoryMgr.getAllItems();
-    const totalUnique = items.length;
-    const totalQty = items.reduce((s, i) => s + i.quantity, 0);
-
+    const items = inv.getAllItems();
+    const u = items.length, t = items.reduce((s, i) => s + i.quantity, 0);
     el.inventoryStats.innerHTML = `
-        <div class="stat-card">
-            <div class="stat-icon blue">📦</div>
-            <div class="stat-info">
-                <div class="stat-value">${totalUnique}</div>
-                <div class="stat-label">Itens Únicos</div>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon gold">🔢</div>
-            <div class="stat-info">
-                <div class="stat-value">${totalQty}</div>
-                <div class="stat-label">Total de Peças</div>
-            </div>
-        </div>`;
+        <div class="stat-card"><div class="stat-icon blue">📦</div><div class="stat-info"><div class="stat-value">${u}</div><div class="stat-label">Itens Únicos</div></div></div>
+        <div class="stat-card"><div class="stat-icon gold">🔢</div><div class="stat-info"><div class="stat-value">${t}</div><div class="stat-label">Total Peças</div></div></div>
+        <div class="stat-card"><div class="stat-icon green">💾</div><div class="stat-info"><div class="stat-value" style="font-size:14px;">${timeAgo(inv.getLastSave())}</div><div class="stat-label">Último Save</div></div></div>`;
 }
 
-// ===== ADD ITEM MODAL =====
+/* ============================================
+   ADD ITEM MODAL - SHOWS ALL COMPONENTS
+   ============================================ */
 function renderAddItemList() {
-    const search = normalize(el.addItemSearch.value);
-    let items = ALL_COMPONENTS;
-    if (search) items = items.filter(c => normalize(c).includes(search));
+    const s = normalize(el.addItemSearch.value);
 
-    const display = items.slice(0, 60);
+    let items = ALL_COMPONENTS;
+    if (s) items = items.filter(c => normalize(c.displayName).includes(s) || normalize(c.parentName).includes(s));
+
+    const display = items.slice(0, 80);
     el.addItemList.innerHTML = '';
 
-    if (display.length === 0) {
-        el.addItemList.innerHTML = `<div class="empty-state" style="padding:20px;"><p>Nenhum item encontrado</p></div>`;
+    if (!display.length) {
+        el.addItemList.innerHTML = `<div class="empty-state" style="padding:20px;"><p>Nenhum componente encontrado. Tente buscar por nome do item ou warframe.</p></div>`;
         return;
     }
 
     display.forEach(comp => {
-        const inInv = inventoryMgr.hasItem(comp);
-        const recipes = inventoryMgr.findRecipesUsing(comp);
-
+        const inI = inv.hasItem(comp.id);
         const div = document.createElement('div');
-        div.className = `add-item-option${inInv ? ' in-inventory' : ''}`;
+        div.className = `add-item-option${inI ? ' in-inventory' : ''}`;
         div.innerHTML = `
-            <div>
-                <div class="add-item-option-name">${comp}</div>
-                <div class="add-item-option-sub">${recipes.slice(0, 2).map(r => r.name).join(', ') || 'Componente'}</div>
+            <div style="min-width:0;flex:1;">
+                <div class="add-item-option-name">${comp.displayName}</div>
+                <div class="add-item-option-sub">📦 ${comp.parentName}</div>
             </div>
-            <button class="add-item-option-btn ${inInv ? 'remove' : 'add'}">
-                ${inInv ? 'Remover' : 'Adicionar'}
-            </button>`;
-
-        div.querySelector('button').addEventListener('click', (e) => {
+            <button class="add-item-option-btn ${inI ? 'remove' : 'add'}">${inI ? 'Remover' : 'Adicionar'}</button>`;
+        div.querySelector('button').addEventListener('click', e => {
             e.stopPropagation();
-            if (inInv) {
-                inventoryMgr.removeItem(comp);
-                showToast(`${comp} removido`, 'error');
-            } else {
-                inventoryMgr.addItem(comp, 1);
-                showToast(`${comp} adicionado!`);
-            }
-            renderAddItemList();
-            renderAll();
+            if (inI) { inv.removeItem(comp.id); showToast(`${comp.displayName} removido`, 'error'); }
+            else { inv.addItem(comp.id, 1); showToast(`${comp.displayName} adicionado!`); }
+            renderAddItemList(); renderAll();
         });
-
         el.addItemList.appendChild(div);
     });
 
-    if (items.length > 60) {
-        const more = document.createElement('div');
-        more.className = 'empty-state';
-        more.style.padding = '10px';
-        more.innerHTML = `<p style="font-size:12px;">Mostrando 60 de ${items.length}. Refine a busca.</p>`;
-        el.addItemList.appendChild(more);
+    if (items.length > 80) {
+        const m = document.createElement('div');
+        m.className = 'empty-state'; m.style.padding = '10px';
+        m.innerHTML = `<p style="font-size:12px;">Mostrando 80 de ${items.length} componentes. Refine a busca.</p>`;
+        el.addItemList.appendChild(m);
     }
 }
 
-// ===== EVENT LISTENERS =====
+/* ============================================
+   BACKUP INFO
+   ============================================ */
+function renderBackupInfo() {
+    const bks = inv.getBackups();
+    el.backupInfoSection.innerHTML = `
+        <h4>📊 STATUS</h4>
+        <p>Usuário: <strong style="color:var(--accent-primary);">${(inv.currentUser || 'N/A').toUpperCase()}</strong></p>
+        <p>Itens: <strong>${inv.getAllItems().length}</strong> | Último save: <strong style="color:var(--success);">${timeAgo(inv.getLastSave())}</strong></p>
+        <p>Backups: <strong>${bks.length}/${MAX_BACKUPS}</strong></p>
+        <p style="margin-top:8px;font-size:11px;color:var(--text-muted);">💡 Dados salvos em localStorage + IndexedDB. Limpar dados do navegador pode apagar tudo. Faça backups manuais!</p>`;
 
-// Login
+    el.backupSlots.innerHTML = '';
+    if (!bks.length) { el.backupSlots.innerHTML = '<p style="font-size:12px;color:var(--text-muted);">Nenhum backup ainda. Backups são criados automaticamente.</p>'; return; }
+    bks.forEach(b => {
+        const btn = document.createElement('button');
+        btn.className = 'backup-slot-btn';
+        btn.textContent = `#${b.slot + 1} — ${timeAgo(b.ts)} (${b.count || '?'} itens)`;
+        btn.addEventListener('click', () => {
+            if (confirm(`Restaurar backup #${b.slot + 1}? Seu inventário atual será substituído.`)) {
+                if (inv.restoreBackup(b.slot)) { showToast('Backup restaurado!'); renderAll(); renderBackupInfo(); }
+                else showToast('Erro ao restaurar', 'error');
+            }
+        });
+        el.backupSlots.appendChild(btn);
+    });
+}
+
+/* ============================================
+   EVENTS
+   ============================================ */
 el.btnLogin.addEventListener('click', () => {
-    const name = el.loginInput.value.trim();
-    if (name) {
-        inventoryMgr.loadUser(name);
-        el.userName.textContent = name.toUpperCase();
-        el.loginModal.classList.add('hidden');
-        renderAll();
-    }
+    const n = el.loginInput.value.trim();
+    if (n) { inv.loadUser(n); el.userName.textContent = n.toUpperCase(); el.loginModal.classList.add('hidden'); renderAll(); }
 });
-
-el.loginInput.addEventListener('keydown', e => {
-    if (e.key === 'Enter') el.btnLogin.click();
-});
-
+el.loginInput.addEventListener('keydown', e => { if (e.key === 'Enter') el.btnLogin.click(); });
 el.btnChangeUser.addEventListener('click', () => {
-    el.loginModal.classList.remove('hidden');
-    el.loginInput.value = '';
+    if (inv.currentUser) { inv.save(); inv.createBackup(); }
+    el.loginModal.classList.remove('hidden'); el.loginInput.value = '';
     setTimeout(() => el.loginInput.focus(), 100);
 });
 
-// Tabs
 document.querySelectorAll('.nav-tab').forEach(tab => {
     tab.addEventListener('click', () => {
         document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
@@ -2072,151 +1095,80 @@ document.querySelectorAll('.nav-tab').forEach(tab => {
     });
 });
 
-// Recipe filters
 el.recipeSearch.addEventListener('input', renderRecipes);
 el.categoryFilter.addEventListener('change', renderRecipes);
 el.progressFilter.addEventListener('change', renderRecipes);
-
-// Inventory
 el.inventorySearch.addEventListener('input', renderInventory);
 
 el.btnAddItem.addEventListener('click', () => {
-    el.addItemModal.classList.remove('hidden');
-    el.addItemSearch.value = '';
-    renderAddItemList();
-    setTimeout(() => el.addItemSearch.focus(), 100);
+    el.addItemModal.classList.remove('hidden'); el.addItemSearch.value = '';
+    renderAddItemList(); setTimeout(() => el.addItemSearch.focus(), 100);
 });
-
 el.addItemSearch.addEventListener('input', renderAddItemList);
 
-// Import/Export
 el.btnImportExport.addEventListener('click', () => {
-    el.exportData.value = inventoryMgr.exportData();
-    el.importData.value = '';
-    el.importExportModal.classList.remove('hidden');
+    el.exportData.value = inv.exportData(); el.importData.value = '';
+    renderBackupInfo(); el.importExportModal.classList.remove('hidden');
 });
-
 el.btnCopyExport.addEventListener('click', () => {
     el.exportData.select();
-    navigator.clipboard.writeText(el.exportData.value)
-        .then(() => showToast('Dados copiados!'))
-        .catch(() => { document.execCommand('copy'); showToast('Dados copiados!'); });
+    navigator.clipboard.writeText(el.exportData.value).then(() => showToast('Copiado!')).catch(() => { document.execCommand('copy'); showToast('Copiado!'); });
 });
-
 el.btnImport.addEventListener('click', () => {
-    const data = el.importData.value.trim();
-    if (!data) { showToast('Cole seus dados antes', 'error'); return; }
-    if (inventoryMgr.importData(data)) {
-        showToast('Dados importados com sucesso!');
-        el.importExportModal.classList.add('hidden');
-        renderAll();
-    } else {
-        showToast('Erro ao importar. Verifique o formato.', 'error');
-    }
+    const d = el.importData.value.trim();
+    if (!d) { showToast('Cole seus dados', 'error'); return; }
+    if (inv.importData(d)) { showToast('Importado!'); el.importExportModal.classList.add('hidden'); renderAll(); }
+    else showToast('Formato inválido', 'error');
 });
-
-// Refresh API
 el.btnRefreshApi.addEventListener('click', async () => {
-    showToast('Atualizando dados da API...');
-    el.loadingScreen.classList.remove('hidden');
-    el.loadingScreen.style.opacity = '1';
-    const success = await loadDataFromAPI(true);
-    if (success) {
-        populateCategoryFilter();
-        renderAll();
-        updateApiStatus();
-        showToast(`Atualizado! ${RECIPES.length} receitas carregadas`);
-    } else {
-        showToast('Falha ao atualizar', 'error');
-    }
+    showToast('Atualizando...');
+    el.loadingScreen.classList.remove('hidden'); el.loadingScreen.style.opacity = '1';
+    const ok = await loadAPI(true);
+    if (ok) { populateCategories(); renderAll(); updateApiStatus(); showToast(`${RECIPES.length} receitas | ${ALL_COMPONENTS.length} componentes`); }
+    else showToast('Falha', 'error');
     el.loadingScreen.classList.add('hidden');
 });
 
-// Modal close
 document.querySelectorAll('.modal-close').forEach(btn => {
-    btn.addEventListener('click', () => {
-        document.getElementById(btn.dataset.close).classList.add('hidden');
-    });
+    btn.addEventListener('click', () => document.getElementById(btn.dataset.close).classList.add('hidden'));
 });
-
 document.querySelectorAll('.modal').forEach(modal => {
-    modal.addEventListener('click', e => {
-        if (e.target === modal && modal.id !== 'loginModal') {
-            modal.classList.add('hidden');
-        }
-    });
+    modal.addEventListener('click', e => { if (e.target === modal && modal.id !== 'loginModal') modal.classList.add('hidden'); });
 });
-
 document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') {
-        document.querySelectorAll('.modal:not(.hidden)').forEach(m => {
-            if (m.id !== 'loginModal') m.classList.add('hidden');
-        });
-    }
+    if (e.key === 'Escape') document.querySelectorAll('.modal:not(.hidden)').forEach(m => { if (m.id !== 'loginModal') m.classList.add('hidden'); });
 });
 
-// ===== API STATUS BADGE =====
-function updateApiStatus() {
-    if (API_LOADED) {
-        if (API_SOURCE === 'cache-expired') {
-            el.apiStatusBadge.className = 'api-status offline';
-            el.apiStatusBadge.textContent = 'OFFLINE';
-            el.apiStatusBadge.title = `Cache antigo (${RECIPES.length} receitas)`;
-        } else if (API_SOURCE === 'cache') {
-            el.apiStatusBadge.className = 'api-status online';
-            el.apiStatusBadge.textContent = `CACHE ✓`;
-            el.apiStatusBadge.title = `${RECIPES.length} receitas do cache`;
-        } else {
-            el.apiStatusBadge.className = 'api-status online';
-            el.apiStatusBadge.textContent = `API ✓`;
-            el.apiStatusBadge.title = `${RECIPES.length} receitas de ${API_SOURCE}`;
-        }
-    } else {
-        el.apiStatusBadge.className = 'api-status offline';
-        el.apiStatusBadge.textContent = 'ERRO';
-    }
-}
+// Auto-backup every 60s
+setInterval(() => { if (inv.currentUser && inv.isDirty()) { inv.createBackup(); updateBackupBadge(); } }, 60000);
 
-// ===== BOOT SEQUENCE =====
+// Save on exit
+window.addEventListener('beforeunload', () => { if (inv.currentUser) { inv.save(); if (inv.isDirty()) inv.createBackup(); } });
+
+/* ============================================
+   BOOT
+   ============================================ */
 async function boot() {
-    setLoadingProgress(0, 'Inicializando...');
-
-    const success = await loadDataFromAPI();
-
-    if (!success) {
+    setProgress(0, 'Inicializando...');
+    const ok = await loadAPI();
+    if (!ok) {
         el.loadingError.style.display = 'block';
-        el.loadingError.innerHTML = `
-            <p>⚠️ Não foi possível carregar os dados do Warframe.</p>
-            <p>Verifique sua conexão com a internet e tente novamente.</p>
-            <button onclick="location.reload()">TENTAR NOVAMENTE</button>`;
-        el.loadingStatus.textContent = 'Erro ao carregar dados';
+        el.loadingError.innerHTML = `<p>⚠️ Sem dados disponíveis.</p><button onclick="location.reload()">TENTAR NOVAMENTE</button>`;
         return;
     }
+    populateCategories(); updateApiStatus();
+    const last = InventoryManager.getLastUser();
+    if (last) { inv.loadUser(last); el.userName.textContent = last.toUpperCase(); }
+    else el.loginModal.classList.remove('hidden');
 
-    // Data loaded successfully
-    populateCategoryFilter();
-    updateApiStatus();
-
-    // Check for saved user
-    const lastUser = InventoryManager.getLastUser();
-    if (lastUser) {
-        inventoryMgr.loadUser(lastUser);
-        el.userName.textContent = lastUser.toUpperCase();
-    } else {
-        el.loginModal.classList.remove('hidden');
-    }
-
-    // Show app
     setTimeout(() => {
-        el.loadingScreen.classList.add('hidden');
-        el.app.style.display = 'block';
+        el.loadingScreen.classList.add('hidden'); el.app.style.display = 'block';
         renderAll();
-    }, 500);
+        if (inv.currentUser && inv.getAllItems().length) inv.createBackup();
+    }, 600);
 }
 
-// Start!
 boot();
-
 })();
 </script>
 </body>
