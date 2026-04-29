@@ -1,18 +1,59 @@
 /**
- * ui-recipes.js
- * Renderiza cards de receitas, stats e modal de detalhes
+ * - Cache de progresso para evitar recálculos
+ * - Debounce na busca
+ * - Renderização paginada (carrega 50 de cada vez)
  */
 
+let progressCache = {};
+let progressCacheDirty = true;
+
+function invalidateProgressCache() {
+    progressCacheDirty = true;
+}
+
+function getProgress(recipe) {
+    if (progressCacheDirty) {
+        progressCache = {};
+        progressCacheDirty = false;
+    }
+    if (!progressCache[recipe.name]) {
+        progressCache[recipe.name] = inv.getRecipeProgress(recipe);
+    }
+    return progressCache[recipe.name];
+}
+
+// Paginação
+let recipePage = 0;
+const RECIPES_PER_PAGE = 50;
+let filteredRecipesCache = [];
+let isLoadingMore = false;
+
+// Debounce para busca
+let recipeSearchTimer = null;
+
+function setupRecipeSearchDebounce() {
+    el.recipeSearch.addEventListener('input', () => {
+        clearTimeout(recipeSearchTimer);
+        recipeSearchTimer = setTimeout(() => {
+            recipePage = 0;
+            renderRecipes();
+        }, 300);
+    });
+}
+
 function renderRecipes() {
+    invalidateProgressCache();
+
     const search = normalize(el.recipeSearch.value);
     const catFilter = el.categoryFilter.value;
     const progFilter = el.progressFilter.value;
 
-    let filtered = RECIPES.filter(recipe => {
+    // Filtra uma vez
+    filteredRecipesCache = RECIPES.filter(recipe => {
         if (search && !normalize(recipe.name).includes(search)) return false;
         if (catFilter !== 'all' && recipe.category !== catFilter) return false;
         if (progFilter !== 'all') {
-            const p = inv.getRecipeProgress(recipe);
+            const p = getProgress(recipe);
             const isCrafted = inv.isCrafted(recipe.name);
             if (progFilter === 'complete'  && p.percentage !== 100) return false;
             if (progFilter === 'partial'   && (p.percentage === 0 || p.percentage === 100)) return false;
@@ -23,12 +64,13 @@ function renderRecipes() {
         return true;
     });
 
-    filtered.sort((a, b) => {
+    // Ordena uma vez
+    filteredRecipesCache.sort((a, b) => {
         const ca = inv.isCrafted(a.name), cb = inv.isCrafted(b.name);
         if (ca && !cb) return 1;
         if (cb && !ca) return -1;
-        const pa = inv.getRecipeProgress(a).percentage;
-        const pb = inv.getRecipeProgress(b).percentage;
+        const pa = getProgress(a).percentage;
+        const pb = getProgress(b).percentage;
         if (pa === 100 && pb !== 100) return 1;
         if (pb === 100 && pa !== 100) return -1;
         if (pb !== pa) return pb - pa;
@@ -36,37 +78,70 @@ function renderRecipes() {
     });
 
     el.recipesGrid.innerHTML = '';
+    recipePage = 0;
 
-    if (!filtered.length) {
+    if (!filteredRecipesCache.length) {
         el.recipesGrid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><h3>Nenhuma receita encontrada</h3><p>Ajuste os filtros</p></div>`;
         return;
     }
 
-    filtered.forEach(recipe => el.recipesGrid.appendChild(createRecipeCard(recipe)));
+    appendRecipePage();
+}
+
+function appendRecipePage() {
+    const start = recipePage * RECIPES_PER_PAGE;
+    const end = Math.min(start + RECIPES_PER_PAGE, filteredRecipesCache.length);
+    const fragment = document.createDocumentFragment();
+
+    for (let i = start; i < end; i++) {
+        fragment.appendChild(createRecipeCard(filteredRecipesCache[i]));
+    }
+
+    el.recipesGrid.appendChild(fragment);
+    recipePage++;
+
+    // Mostra botão "carregar mais" se houver mais
+    const existing = el.recipesGrid.querySelector('.load-more-btn');
+    if (existing) existing.remove();
+
+    if (end < filteredRecipesCache.length) {
+        const loadMoreBtn = document.createElement('div');
+        loadMoreBtn.className = 'empty-state load-more-btn';
+        loadMoreBtn.style.cssText = 'grid-column:1/-1;padding:20px;cursor:pointer;';
+        loadMoreBtn.innerHTML = `<button class="btn-secondary" style="margin:0 auto;">Carregar mais (${filteredRecipesCache.length - end} restantes)</button>`;
+        loadMoreBtn.addEventListener('click', () => {
+            loadMoreBtn.remove();
+            appendRecipePage();
+        });
+        el.recipesGrid.appendChild(loadMoreBtn);
+    }
 }
 
 function createRecipeCard(recipe) {
-    const pr = inv.getRecipeProgress(recipe);
+    const pr = getProgress(recipe);
     const isPrime = recipe.name.includes('Prime');
     const pct = pr.percentage;
     const isCrafted = inv.isCrafted(recipe.name);
 
     let badgeClass, badgeText;
-    if (isCrafted)       { badgeClass = 'none';     badgeText = 'Fabricado';   }
-    else if (pct === 100){ badgeClass = 'complete';  badgeText = 'Completo';    }
-    else if (pct > 0)    { badgeClass = 'partial';   badgeText = 'Parcial';     }
-    else                 { badgeClass = 'none';      badgeText = 'Faltam todos';}
+    if (isCrafted)        { badgeClass = 'none';     badgeText = 'Fabricado'; }
+    else if (pct === 100) { badgeClass = 'complete';  badgeText = 'Completo'; }
+    else if (pct > 0)     { badgeClass = 'partial';   badgeText = 'Parcial'; }
+    else                  { badgeClass = 'none';      badgeText = 'Faltam todos'; }
 
     let fillClass;
     if (isPrime) fillClass = pct === 100 ? 'gold' : pct > 0 ? 'orange' : 'red';
     else         fillClass = pct === 100 ? 'green': pct > 0 ? 'orange' : 'red';
 
-    const tags = pr.details.map(d => {
+    // Limita tags a 6 para performance
+    const maxTags = 6;
+    const tagsToShow = pr.details.slice(0, maxTags);
+    const tags = tagsToShow.map(d => {
         let label = d.rawName || d.displayName;
-        if (label.length > 20) label = label.substring(0, 17) + '...';
-        const qty = d.quantity > 1 ? ` <small>x${d.quantity}</small>` : '';
-        return `<span class="recipe-item-tag${d.owned ? ' owned' : ''}">${d.owned ? '<span class="check">✓</span>' : ''}${label}${qty}</span>`;
+        if (label.length > 18) label = label.substring(0, 15) + '...';
+        return `<span class="recipe-item-tag${d.owned ? ' owned' : ''}">${d.owned ? '<span class="check">✓</span>' : ''}${label}</span>`;
     }).join('');
+    const extraTags = pr.details.length > maxTags ? `<span class="recipe-item-tag">+${pr.details.length - maxTags}</span>` : '';
 
     const card = document.createElement('div');
     card.className = `recipe-card${isPrime ? ' prime' : ''}${isCrafted ? ' crafted' : ''}`;
@@ -78,7 +153,7 @@ function createRecipeCard(recipe) {
             </div>
             <div class="recipe-header-badges">
                 <span class="crafted-badge ${isCrafted ? 'is-crafted' : 'not-crafted'}"
-                      title="${isCrafted ? 'Clique para desmarcar' : 'Clique para marcar como fabricado'}">
+                      title="${isCrafted ? 'Desmarcar fabricação' : 'Marcar como fabricado'}">
                     ${isCrafted ? '🔨 FABRICADO' : '🔨'}
                 </span>
                 <span class="recipe-badge ${badgeClass}">${badgeText}</span>
@@ -88,7 +163,7 @@ function createRecipeCard(recipe) {
             <div class="recipe-progress-bar">
                 <div class="recipe-progress-fill ${fillClass}" style="width:${pct}%"></div>
             </div>
-            <div class="recipe-items-preview">${tags}</div>
+            <div class="recipe-items-preview">${tags}${extraTags}</div>
             <div class="recipe-counter">${pr.owned}/${pr.total}</div>
         </div>
         ${!isCrafted && pr.maxCrafts > 0 ? `<div class="recipe-card-footer"><div class="craft-count-badge">Pode fabricar: <strong>${pr.maxCrafts}x</strong></div></div>` : ''}`;
@@ -108,17 +183,17 @@ function createRecipeCard(recipe) {
 
 function handleCraftToggle(recipe, progress, isCrafted) {
     if (isCrafted) {
-        if (confirm(`Desmarcar "${recipe.name}" como fabricado?\n\nOs componentes serão devolvidos ao inventário.`)) {
+        if (confirm(`Desmarcar "${recipe.name}"?\n\nItens devolvidos ao inventário.`)) {
             inv.uncraftRecipe(recipe);
-            showToast(`${recipe.name} desmarcado — itens devolvidos`, 'error');
+            showToast(`${recipe.name} desmarcado`, 'error');
             renderAll();
         }
     } else {
         if (!progress.canCraft) {
-            showToast(`Faltam componentes para fabricar ${recipe.name}!`, 'error');
+            showToast(`Faltam componentes!`, 'error');
             return;
         }
-        if (confirm(`Fabricar "${recipe.name}"?\n\nRemoverá 1 de cada componente:\n${recipe.components.map(c => '• ' + c.displayName).join('\n')}`)) {
+        if (confirm(`Fabricar "${recipe.name}"?\n\nRemove 1 de cada componente.`)) {
             inv.craftRecipe(recipe);
             showToast(`🔨 ${recipe.name} fabricado!`, 'craft');
             renderAll();
@@ -129,7 +204,7 @@ function handleCraftToggle(recipe, progress, isCrafted) {
 function renderRecipeStats() {
     let total = RECIPES.length, complete = 0, craftable = 0, crafted = 0, ownedComp = 0, totalComp = 0;
     RECIPES.forEach(recipe => {
-        const p = inv.getRecipeProgress(recipe);
+        const p = getProgress(recipe);
         totalComp += p.total; ownedComp += p.owned;
         if (inv.isCrafted(recipe.name)) crafted++;
         else if (p.canCraft) craftable++;
@@ -144,6 +219,7 @@ function renderRecipeStats() {
 }
 
 function openDetail(recipe) {
+    // Recalcula fresco para o detalhe (não usa cache)
     const pr = inv.getRecipeProgress(recipe);
     const isPrime = recipe.name.includes('Prime');
     const pct = pr.percentage;
@@ -176,42 +252,23 @@ function openDetail(recipe) {
     });
     html += `</div>`;
 
-    // Seção de fabricação
+    // Seção craft
     const craftClass = isCrafted ? 'is-crafted' : pr.canCraft ? 'can-craft' : '';
     const titleClass = isCrafted ? 'crafted' : pr.canCraft ? 'available' : 'unavailable';
-    const titleText  = isCrafted ? '🔨 FABRICADO' : pr.canCraft ? '⚡ PRONTO PARA FABRICAR' : '🔒 COMPONENTES FALTANDO';
-
-    html += `<div class="craft-section ${craftClass}">
-        <div class="craft-section-header">
-            <div class="craft-section-title ${titleClass}">${titleText}</div>
-            ${!isCrafted && pr.maxCrafts > 0 ? `<div class="craft-possible">Fabricações possíveis: <strong>${pr.maxCrafts}x</strong></div>` : ''}
-        </div>`;
+    const titleText  = isCrafted ? '🔨 FABRICADO' : pr.canCraft ? '⚡ PRONTO' : '🔒 FALTAM COMPONENTES';
+    html += `<div class="craft-section ${craftClass}"><div class="craft-section-header"><div class="craft-section-title ${titleClass}">${titleText}</div>${!isCrafted && pr.maxCrafts > 0 ? `<div class="craft-possible">Pode fabricar: <strong>${pr.maxCrafts}x</strong></div>` : ''}</div>`;
 
     if (isCrafted) {
-        const craftTime = inv.getCraftedTime(recipe.name);
-        html += `
-            <div class="crafted-status">
-                <div>
-                    <div class="crafted-status-text">✅ Item fabricado</div>
-                    <div class="crafted-status-time">Fabricado em: ${craftTime ? new Date(craftTime).toLocaleString('pt-BR') : 'Data desconhecida'}</div>
-                </div>
-            </div>
-            <div class="craft-actions" style="margin-top:12px;">
-                <button class="btn-primary btn-warning" id="btnUncraft">↩️ DESFAZER FABRICAÇÃO</button>
-            </div>
-            <div class="craft-warning">⚠️ Desfazer devolverá 1 de cada componente ao inventário</div>`;
+        const ct = inv.getCraftedTime(recipe.name);
+        html += `<div class="crafted-status"><div><div class="crafted-status-text">✅ Fabricado</div><div class="crafted-status-time">${ct ? new Date(ct).toLocaleString('pt-BR') : ''}</div></div></div><div class="craft-actions" style="margin-top:12px;"><button class="btn-primary btn-warning" id="btnUncraft">↩️ DESFAZER</button></div><div class="craft-warning">⚠️ Devolve componentes ao inventário</div>`;
     } else if (pr.canCraft) {
-        html += `
-            <div class="craft-actions">
-                <button class="btn-primary btn-danger" id="btnCraft">🔨 FABRICAR</button>
-            </div>
-            <div class="craft-warning">⚠️ Fabricar removerá 1 de cada componente do inventário</div>`;
+        html += `<div class="craft-actions"><button class="btn-primary btn-danger" id="btnCraft">🔨 FABRICAR</button></div><div class="craft-warning">⚠️ Remove 1 de cada componente</div>`;
     } else {
-        html += `<div style="font-size:13px;color:var(--text-muted);">Adicione todos os componentes para fabricar.</div>`;
+        html += `<div style="font-size:13px;color:var(--text-muted);">Adicione todos os componentes.</div>`;
     }
     html += `</div>`;
 
-    if (recipe.wikiaUrl) html += `<div style="margin-top:16px;text-align:center;"><a href="${recipe.wikiaUrl}" target="_blank" rel="noopener" style="color:var(--accent-primary);font-size:13px;text-decoration:none;">📖 Wiki</a></div>`;
+    if (recipe.wikiaUrl) html += `<div style="margin-top:16px;text-align:center;"><a href="${recipe.wikiaUrl}" target="_blank" style="color:var(--accent-primary);font-size:13px;text-decoration:none;">📖 Wiki</a></div>`;
 
     el.recipeDetailTitle.textContent = recipe.name;
     el.recipeDetailBody.innerHTML = html;
@@ -220,29 +277,20 @@ function openDetail(recipe) {
     el.recipeDetailBody.querySelectorAll('.toggle-btn').forEach(btn => {
         btn.addEventListener('click', e => {
             e.stopPropagation();
-            const id = btn.dataset.compId;
-            const dn = COMP_MAP[id]?.displayName || id;
+            const id = btn.dataset.compId, dn = COMP_MAP[id]?.displayName || id;
             if (btn.dataset.action === 'add') { inv.addItem(id, 1); showToast(`${dn} adicionado!`); }
             else { inv.removeItem(id); showToast(`${dn} removido`, 'error'); }
             openDetail(recipe); renderAll();
         });
     });
 
-    const btnCraft = el.recipeDetailBody.querySelector('#btnCraft');
-    if (btnCraft) btnCraft.addEventListener('click', () => {
-        if (confirm(`Fabricar "${recipe.name}"?\n\nRemoverá 1 de cada componente.`)) {
-            inv.craftRecipe(recipe);
-            showToast(`🔨 ${recipe.name} fabricado!`, 'craft');
-            openDetail(recipe); renderAll();
-        }
+    const bc = el.recipeDetailBody.querySelector('#btnCraft');
+    if (bc) bc.addEventListener('click', () => {
+        if (confirm(`Fabricar "${recipe.name}"?`)) { inv.craftRecipe(recipe); showToast(`🔨 Fabricado!`, 'craft'); openDetail(recipe); renderAll(); }
     });
 
-    const btnUncraft = el.recipeDetailBody.querySelector('#btnUncraft');
-    if (btnUncraft) btnUncraft.addEventListener('click', () => {
-        if (confirm(`Desfazer fabricação de "${recipe.name}"?\n\nDevolverá os componentes.`)) {
-            inv.uncraftRecipe(recipe);
-            showToast(`${recipe.name} desmarcado`, 'error');
-            openDetail(recipe); renderAll();
-        }
+    const bu = el.recipeDetailBody.querySelector('#btnUncraft');
+    if (bu) bu.addEventListener('click', () => {
+        if (confirm(`Desfazer "${recipe.name}"?`)) { inv.uncraftRecipe(recipe); showToast(`Desmarcado`, 'error'); openDetail(recipe); renderAll(); }
     });
 }
