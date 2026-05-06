@@ -1,45 +1,225 @@
-function renderCrafted(){
-    const s=normalize(el.craftedSearch.value),cf=el.craftedCategoryFilter.value;
-    let craftedRecipes=RECIPES.filter(r=>{
-        if(!inv.isCrafted(r.name))return false;
-        if(s&&!normalize(r.name).includes(s))return false;
-        if(cf!=='all'&&r.category!==cf)return false;
+/**
+ * ui-crafted.js
+ * Aba dedicada aos itens fabricados COM busca e fabricação manual
+ */
+
+function renderCrafted() {
+    const search = normalize(el.craftedSearch.value);
+    const catFilter = el.craftedCategoryFilter.value;
+
+    let craftedRecipes = RECIPES.filter(recipe => {
+        if (!inv.isCrafted(recipe.name)) return false;
+        if (search && !normalize(recipe.name).includes(search)) return false;
+        if (catFilter !== 'all' && recipe.category !== catFilter) return false;
         return true;
     });
-    craftedRecipes.sort((a,b)=>{const ta=inv.getCraftedTime(a.name)||0,tb=inv.getCraftedTime(b.name)||0;return tb-ta;});
-    el.craftedGrid.innerHTML='';
-    if(!craftedRecipes.length){el.craftedGrid.innerHTML=`<div class="empty-state" style="grid-column:1/-1;"><h3>Nenhum item fabricado</h3><p>Itens fabricados na aba "Receitas" aparecerão aqui.</p></div>`;renderCraftedStats(0);return;}
-    craftedRecipes.forEach(r=>el.craftedGrid.appendChild(createCraftedCard(r)));
+
+    craftedRecipes.sort((a, b) => {
+        const ta = inv.getCraftedTime(a.name) || 0;
+        const tb = inv.getCraftedTime(b.name) || 0;
+        return tb - ta;
+    });
+
+    el.craftedGrid.innerHTML = '';
+
+    // BOTÃO de marcar fabricação manual (sempre visível no topo)
+    const addBtn = document.createElement('button');
+    addBtn.className = 'crafted-add-btn';
+    addBtn.innerHTML = '🔨 MARCAR ITEM COMO FABRICADO';
+    addBtn.addEventListener('click', openManualCraftModal);
+    el.craftedGrid.appendChild(addBtn);
+
+    if (!craftedRecipes.length) {
+        const empty = document.createElement('div');
+        empty.className = 'empty-state';
+        empty.style.gridColumn = '1/-1';
+        empty.innerHTML = `<h3>Nenhum item fabricado</h3><p>Use o botão acima ou marque na aba "Receitas".</p>`;
+        el.craftedGrid.appendChild(empty);
+        renderCraftedStats(0);
+        return;
+    }
+
+    craftedRecipes.forEach(r => el.craftedGrid.appendChild(createCraftedCard(r)));
     renderCraftedStats(craftedRecipes.length);
 }
 
-function createCraftedCard(recipe){
-    const isPrime=recipe.name.includes('Prime'),craftTime=inv.getCraftedTime(recipe.name),pr=inv.getRecipeProgress(recipe);
-    const imgSrc=recipe.imageName?`${CONFIG.IMG_CDN}${recipe.imageName}`:'';
-    const imgHtml=imgSrc?`<div class="crafted-card-image"><img src="${imgSrc}" alt="${recipe.name}" loading="lazy" onerror="this.parentNode.innerHTML='<span class=\\'image-placeholder\\'>📦</span><span class=\\'crafted-overlay\\'>FABRICADO</span>';"><span class="crafted-overlay">FABRICADO</span></div>`:`<div class="crafted-card-image"><span class="image-placeholder">📦</span><span class="crafted-overlay">FABRICADO</span></div>`;
-    const comps=pr.details.map(d=>{const need=d.requiredQty>1?` x${d.requiredQty}`:'';return`<span class="crafted-comp-tag">${d.rawName||d.displayName}${need}</span>`;}).join('');
+function createCraftedCard(recipe) {
+    const isPrime = recipe.name.includes('Prime');
+    const craftTime = inv.getCraftedTime(recipe.name);
+    const pr = inv.getRecipeProgress(recipe);
 
-    const card=document.createElement('div');card.className=`crafted-card${isPrime?' prime':''}`;
-    card.innerHTML=`${imgHtml}<div class="crafted-card-body"><div class="crafted-card-name">${recipe.name}</div><div class="crafted-card-category">${recipe.category}</div><div class="crafted-card-date">📅 ${craftTime?new Date(craftTime).toLocaleDateString('pt-BR'):'Data desconhecida'}</div><div class="crafted-card-components">${comps}</div><div class="crafted-card-actions"><button class="btn-small btn-uncraft">↩️ DESFAZER</button><button class="btn-small btn-detail">📋 DETALHES</button></div></div>`;
+    const imgSrc = recipe.imageName ? `${CONFIG.IMG_CDN || 'https://cdn.warframestat.us/img/'}${recipe.imageName}` : '';
+    const imgHtml = imgSrc
+        ? `<div class="crafted-card-image"><img src="${imgSrc}" alt="${recipe.name}" loading="lazy" onerror="this.parentNode.innerHTML='<span class=\\'image-placeholder\\'>📦</span><span class=\\'crafted-overlay\\'>FABRICADO</span>';"><span class="crafted-overlay">FABRICADO</span></div>`
+        : `<div class="crafted-card-image"><span class="image-placeholder">📦</span><span class="crafted-overlay">FABRICADO</span></div>`;
 
-    card.querySelector('.btn-uncraft').addEventListener('click',()=>{
-        if(confirm(`Desfazer fabricação de "${recipe.name}"?\nComponentes serão devolvidos.`)){inv.uncraftRecipe(recipe);showToast(`${recipe.name} desmarcado`,'error');renderAll();}
+    const comps = pr.details.map(d => {
+        const need = d.requiredQty > 1 ? ` x${d.requiredQty}` : '';
+        const rarity = COMP_MAP[d.id]?.rarity || 'unknown';
+        return `<span class="crafted-comp-tag rarity-${rarity}"><span class="rarity-badge ${rarity}"></span>${d.rawName || d.displayName}${need}</span>`;
+    }).join('');
+
+    const card = document.createElement('div');
+    card.className = `crafted-card${isPrime ? ' prime' : ''}`;
+    card.innerHTML = `
+        ${imgHtml}
+        <div class="crafted-card-body">
+            <div class="crafted-card-name">${recipe.name}</div>
+            <div class="crafted-card-category">${recipe.category}</div>
+            <div class="crafted-card-date">📅 ${craftTime ? new Date(craftTime).toLocaleDateString('pt-BR') : 'Data desconhecida'}</div>
+            <div class="crafted-card-components">${comps}</div>
+            <div class="crafted-card-actions">
+                <button class="btn-small btn-uncraft">↩️ DESFAZER</button>
+                <button class="btn-small btn-detail">📋 DETALHES</button>
+            </div>
+        </div>`;
+
+    card.querySelector('.btn-uncraft').addEventListener('click', () => {
+        if (confirm(`Desfazer fabricação de "${recipe.name}"?\n\nOs componentes serão devolvidos ao inventário.`)) {
+            inv.uncraftRecipe(recipe);
+            showToast(`${recipe.name} desmarcado`, 'error');
+            renderAll();
+        }
     });
-    card.querySelector('.btn-detail').addEventListener('click',()=>openDetail(recipe));
+
+    card.querySelector('.btn-detail').addEventListener('click', () => {
+        if (typeof openDetail === 'function') openDetail(recipe);
+    });
+
     return card;
 }
 
-function renderCraftedStats(count){
-    const cats={};
-    RECIPES.forEach(r=>{if(inv.isCrafted(r.name)){cats[r.category]=(cats[r.category]||0)+1;}});
-    const topCat=Object.entries(cats).sort((a,b)=>b[1]-a[1])[0];
-    el.craftedStats.innerHTML=`
-        <div class="stat-card"><div class="stat-icon red">🔨</div><div class="stat-info"><div class="stat-value">${count}</div><div class="stat-label">Fabricados</div></div></div>
-        ${topCat?`<div class="stat-card"><div class="stat-icon gold">⭐</div><div class="stat-info"><div class="stat-value" style="font-size:16px;">${topCat[0]}</div><div class="stat-label">Mais fabricado (${topCat[1]})</div></div></div>`:''}`;
+function renderCraftedStats(count) {
+    const cats = {};
+    RECIPES.forEach(r => {
+        if (inv.isCrafted(r.name)) {
+            cats[r.category] = (cats[r.category] || 0) + 1;
+        }
+    });
+    const topCat = Object.entries(cats).sort((a, b) => b[1] - a[1])[0];
+
+    el.craftedStats.innerHTML = `
+        <div class="stat-card">
+            <div class="stat-icon red">🔨</div>
+            <div class="stat-info">
+                <div class="stat-value">${count}</div>
+                <div class="stat-label">Fabricados</div>
+            </div>
+        </div>
+        ${topCat ? `<div class="stat-card">
+            <div class="stat-icon gold">⭐</div>
+            <div class="stat-info">
+                <div class="stat-value" style="font-size:14px;">${topCat[0]}</div>
+                <div class="stat-label">Mais fabricado (${topCat[1]})</div>
+            </div>
+        </div>` : ''}`;
 }
 
-function populateCraftedCategories(){
-    const cats=WarframeAPI.getCategories(RECIPES);
-    el.craftedCategoryFilter.innerHTML='<option value="all">Todas Categorias</option>';
-    cats.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;el.craftedCategoryFilter.appendChild(o);});
+function populateCraftedCategories() {
+    const cats = WarframeAPI.getCategories(RECIPES);
+    el.craftedCategoryFilter.innerHTML = '<option value="all">Todas Categorias</option>';
+    cats.forEach(c => {
+        const o = document.createElement('option');
+        o.value = c;
+        o.textContent = c;
+        el.craftedCategoryFilter.appendChild(o);
+    });
+}
+
+// ============================================
+// MODAL MANUAL DE FABRICAÇÃO
+// ============================================
+let manualSearchTimer = null;
+
+function openManualCraftModal() {
+    const modal = document.getElementById('manualCraftModal');
+    const search = document.getElementById('manualCraftSearch');
+    if (!modal) {
+        console.error('[ManualCraft] Modal não encontrado no DOM');
+        showToast('Erro ao abrir modal', 'error');
+        return;
+    }
+
+    modal.classList.remove('hidden');
+    if (search) {
+        search.value = '';
+        // Bind do search se ainda não foi feito
+        if (!search.dataset.bound) {
+            search.addEventListener('input', () => {
+                clearTimeout(manualSearchTimer);
+                manualSearchTimer = setTimeout(renderManualCraftList, 300);
+            });
+            search.dataset.bound = 'true';
+        }
+        setTimeout(() => search.focus(), 100);
+    }
+
+    renderManualCraftList();
+}
+
+function renderManualCraftList() {
+    const searchEl = document.getElementById('manualCraftSearch');
+    const list = document.getElementById('manualCraftList');
+    if (!list) return;
+
+    const search = searchEl ? normalize(searchEl.value) : '';
+
+    let recipes = RECIPES.filter(r => {
+        if (search && !normalize(r.name).includes(search)) return false;
+        return true;
+    });
+
+    // Ordena: não-fabricados primeiro
+    recipes.sort((a, b) => {
+        const ca = inv.isCrafted(a.name);
+        const cb = inv.isCrafted(b.name);
+        if (ca && !cb) return 1;
+        if (cb && !ca) return -1;
+        return a.name.localeCompare(b.name);
+    });
+
+    const display = recipes.slice(0, 100);
+    list.innerHTML = '';
+
+    if (!display.length) {
+        list.innerHTML = '<div class="empty-state" style="padding:20px;"><p>Nenhuma receita encontrada</p></div>';
+        return;
+    }
+
+    display.forEach(recipe => {
+        const isCrafted = inv.isCrafted(recipe.name);
+        const div = document.createElement('div');
+        div.className = `manual-craft-option${isCrafted ? ' already-crafted' : ''}`;
+        div.innerHTML = `
+            <div style="min-width:0;flex:1;">
+                <div class="manual-craft-name">${recipe.name}</div>
+                <div class="manual-craft-cat">${recipe.category}</div>
+            </div>
+            <button class="manual-craft-btn" ${isCrafted ? 'disabled' : ''}>
+                ${isCrafted ? '✅ JÁ FABRICADO' : '🔨 MARCAR'}
+            </button>`;
+
+        const btn = div.querySelector('button');
+        if (!isCrafted) {
+            btn.addEventListener('click', e => {
+                e.stopPropagation();
+                if (confirm(`Marcar "${recipe.name}" como fabricado?\n\nNenhum componente será removido do inventário.`)) {
+                    inv.setCrafted(recipe.name);
+                    showToast(`🔨 ${recipe.name} marcado como fabricado!`, 'craft');
+                    renderManualCraftList();
+                    renderAll();
+                }
+            });
+        }
+
+        list.appendChild(div);
+    });
+
+    if (recipes.length > 100) {
+        const m = document.createElement('div');
+        m.className = 'empty-state';
+        m.style.padding = '10px';
+        m.innerHTML = `<p style="font-size:12px;">Mostrando 100 de ${recipes.length}. Refine a busca.</p>`;
+        list.appendChild(m);
+    }
 }
