@@ -557,3 +557,13 @@ async function boot() {
 }
 
 boot();
+
+// ⭐ Inicia raridades em background
+if (typeof initRarities === 'function') {
+    initRarities();
+}
+
+// ⭐ NOVO: Inicia receitas extras em background
+if (typeof initExtraRecipes === 'function') {
+    initExtraRecipes();
+}
