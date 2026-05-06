@@ -30,6 +30,93 @@ function renderInventory() {
     }
 
     items.forEach(item => {
+        // Tenta pegar do COMP_MAP. Se não existir, é um item PENDENTE (receita ainda não carregou)
+        let info = COMP_MAP[item.id];
+        let isPending = false;
+
+        if (!info) {
+            isPending = true;
+            const parts = item.id.split('::');
+            if (parts.length === 2) {
+                info = {
+                    displayName: `${parts[0]} ${parts[1]}`,
+                    parentName: parts[0],
+                    rawName: parts[1],
+                    rarity: 'unknown'
+                };
+            } else {
+                info = {
+                    displayName: item.id,
+                    parentName: '?',
+                    rawName: item.id,
+                    rarity: 'unknown'
+                };
+            }
+        }
+
+        const rarity = info.rarity || 'unknown';
+        const rarityName = getRarityNameInv(rarity);
+        const recipes = inv.findRecipesUsing(item.id);
+        const rt = recipes.length
+            ? `Receita: ${recipes.map(r => r.name).join(', ')}`
+            : isPending
+                ? '⏳ Receita ainda não carregada (será conectada automaticamente)'
+                : 'Sem receita associada';
+
+        const div = document.createElement('div');
+        div.className = `inventory-item rarity-${rarity}${isPending ? ' pending' : ''}`;
+        div.innerHTML = `
+            <div class="inventory-item-info">
+                <div class="inventory-item-name">
+                    <span class="rarity-badge ${rarity}"></span>${info.displayName}
+                    ${isPending ? '<span class="pending-badge" title="Receita carregando...">⏳ PENDENTE</span>' : ''}
+                    <span class="rarity-label ${rarity}" style="margin-left:6px;">${rarityName}</span>
+                </div>
+                <div class="inventory-item-parent">📦 ${info.parentName}</div>
+                <div class="inventory-item-recipes">${rt}</div>
+            </div>
+            <div class="inventory-item-actions">
+                <div class="quantity-control">
+                    <button class="quantity-btn minus">−</button>
+                    <span class="quantity-value">${item.quantity}</span>
+                    <button class="quantity-btn plus">+</button>
+                </div>
+                <button class="btn-danger-outline delete-btn">✗</button>
+            </div>`;
+
+        div.querySelector('.minus').addEventListener('click', () => {
+            if (item.quantity <= 1) {
+                inv.removeItem(item.id);
+                showToast(`${info.displayName} removido`, 'error');
+            } else {
+                inv.setQty(item.id, item.quantity - 1);
+            }
+            renderAll();
+        });
+
+        div.querySelector('.plus').addEventListener('click', () => {
+            inv.setQty(item.id, item.quantity + 1);
+            renderAll();
+        });
+
+        div.querySelector('.delete-btn').addEventListener('click', () => {
+            inv.removeItem(item.id);
+            showToast(`${info.displayName} removido`, 'error');
+            renderAll();
+        });
+
+        el.inventoryList.appendChild(div);
+    });
+}
+
+    el.inventoryList.innerHTML = '';
+
+    if (!items.length) {
+        el.inventoryList.innerHTML = `<div class="empty-state"><h3>Inventário vazio</h3><p>Clique em "Adicionar Item"</p></div>`;
+        return;
+    }
+
+    items.forEach(item => {
         const info = COMP_MAP[item.id] || { displayName: item.id, parentName: '?', rarity: 'unknown' };
         const rarity = info.rarity || 'unknown';
         const rarityName = getRarityNameInv(rarity);
