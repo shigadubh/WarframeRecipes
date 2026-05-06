@@ -482,23 +482,7 @@ function setupEvents() {
 // BOOT
 // ============================================
 async function boot() {
-    console.log('[Boot] Iniciando aplicação...');
-    setProgress(0, 'Inicializando...');
-
-    let apiOk = false;
-    try {
-        apiOk = await loadAPI();
-    } catch (e) {
-        console.error('[Boot] Erro ao carregar API:', e);
-    }
-
-    if (!apiOk) {
-        el.loadingError.style.display = 'block';
-        el.loadingError.innerHTML = `
-            <p>⚠️ Não foi possível carregar os dados.</p>
-            <button onclick="location.reload()">TENTAR NOVAMENTE</button>`;
-        return;
-    }
+    // ... outras coisas ...
 
     populateCategories();
     if (typeof populateCraftedCategories === 'function') {
@@ -507,9 +491,13 @@ async function boot() {
     updateApiStatus();
     setupEvents();
 
-    // ⭐ Inicia raridades em background (não bloqueia)
+    // ⭐ INICIAR AQUI ⭐
     if (typeof initRarities === 'function') {
         initRarities();
+    }
+
+    if (typeof initExtraRecipes === 'function') {
+        initExtraRecipes();
     }
 
     setTimeout(() => {
@@ -517,53 +505,7 @@ async function boot() {
         el.app.style.display = 'block';
     }, 300);
 
-    const savedCloudId = InventoryManager.getSavedCloudUserId();
-    const lastUser = InventoryManager.getLastUser();
-
-    console.log('[Boot] savedCloudId:', savedCloudId);
-    console.log('[Boot] lastUser:', lastUser);
-
-    if (lastUser) {
-        try {
-            inv.loadUser(lastUser);
-            el.userName.textContent = lastUser.toUpperCase();
-            console.log('[Boot] Usuário carregado:', inv.currentUser);
-
-            setTimeout(() => renderAll(), 400);
-
-            if (savedCloudId && navigator.onLine && typeof cloudSync !== 'undefined') {
-                cloudSync.resumeSession(savedCloudId).then(ok => {
-                    if (ok) {
-                        invalidateProgressCache();
-                        renderAll();
-                        showToast('Sincronizado com a nuvem!');
-                    }
-                }).catch(e => {
-                    console.warn('[Boot] Erro ao sincronizar:', e);
-                });
-            }
-        } catch (e) {
-            console.error('[Boot] Erro ao carregar usuário:', e);
-            el.loginModal.classList.remove('hidden');
-            setTimeout(() => el.loginInput.focus(), 500);
-        }
-    } else {
-        console.log('[Boot] Sem usuário salvo, abrindo login');
-        setTimeout(() => {
-            el.loginModal.classList.remove('hidden');
-            el.loginInput.focus();
-        }, 500);
-    }
+    // ... resto continua igual ...
 }
 
 boot();
-
-// ⭐ Inicia raridades em background
-if (typeof initRarities === 'function') {
-    initRarities();
-}
-
-// ⭐ NOVO: Inicia receitas extras em background
-if (typeof initExtraRecipes === 'function') {
-    initExtraRecipes();
-}
