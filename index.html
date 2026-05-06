@@ -38,18 +38,29 @@
                 </svg>
                 <h1>WARFRAME CRAFT TRACKER</h1>
             </div>
-            <div class="user-section">
-                <span id="syncBadge" class="sync-badge idle" title="Status de sincronização">☁️ SYNC</span>
-                <span id="backupBadge" class="backup-indicator ok" title="Dados salvos">💾 SALVO</span>
-                <span id="apiStatusBadge" class="api-status online">API ✓</span>
-                <span id="userName" class="user-name"></span>
-                <button id="btnChangeUser" class="btn-small" title="Trocar usuário">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                        <circle cx="12" cy="7" r="4"/>
-                    </svg>
-                </button>
+           <div class="user-section">
+    <!-- BARRA DE PROGRESSO DE RECEITAS EXTRAS -->
+    <div id="extraProgressBar" class="extra-progress-container hidden">
+        <span class="extra-progress-icon">⚙️</span>
+        <div class="extra-progress-info">
+            <span id="extraProgressLabel" class="extra-progress-label">Aguardando...</span>
+            <div class="extra-progress-track">
+                <div id="extraProgressFill" class="extra-progress-fill"></div>
             </div>
+        </div>
+    </div>
+
+    <span id="syncBadge" class="sync-badge idle" title="Status de sincronização">☁️ SYNC</span>
+    <span id="backupBadge" class="backup-indicator ok" title="Dados salvos">💾 SALVO</span>
+    <span id="apiStatusBadge" class="api-status online">API ✓</span>
+    <span id="userName" class="user-name"></span>
+    <button id="btnChangeUser" class="btn-small" title="Trocar usuário">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+        </svg>
+    </button>
+</div>
         </div>
         <nav class="nav-tabs">
             <button class="nav-tab active" data-tab="recipes">
