@@ -326,3 +326,63 @@ body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background:
 /* RESPONSIVE */
 @media(max-width:768px){.header-content{padding:10px 16px;}.logo h1{font-size:13px;letter-spacing:1.5px;}.nav-tabs{padding:0 16px;}.nav-tab{padding:10px 14px;font-size:13px;letter-spacing:1px;}.tab-content{padding:16px;}.controls-bar{flex-direction:column;}.search-box{width:100%;}.filter-group{width:100%;}.filter-select{flex:1;}.btn-add{flex:1;justify-content:center;}.recipes-grid,.crafted-grid{grid-template-columns:1fr;}.recipes-stats,.inventory-stats,.crafted-stats{flex-direction:column;}.stat-card{min-width:auto;}.modal-content{max-height:90vh;}.login-modal{padding:30px 24px;}}
 @media(max-width:480px){.logo-icon{width:30px;height:30px;}.logo h1{font-size:11px;}.user-name{display:none;}.backup-indicator{display:none;}.sync-badge{display:none;}.nav-tab{padding:8px 10px;font-size:11px;gap:4px;}.nav-tab svg{width:16px;height:16px;}}
+
+/* ============================================
+   INDICADOR DE RARIDADES + Raridade Desconhecida
+   ============================================ */
+.rarity-indicator {
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 3px;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+    cursor: help;
+    transition: opacity 0.5s ease;
+}
+
+.rarity-indicator.loading {
+    background: var(--warning-bg);
+    color: var(--warning);
+    border: 1px solid rgba(255, 152, 0, 0.27);
+    animation: rarityPulse 1.5s infinite;
+}
+
+.rarity-indicator.success {
+    background: rgba(255, 215, 0, 0.15);
+    color: var(--gold);
+    border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+.rarity-indicator.error {
+    background: var(--bg-tertiary);
+    color: var(--text-muted);
+    border: 1px solid var(--border-color);
+}
+
+@keyframes rarityPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* Raridade desconhecida (cinza neutro) */
+:root {
+    --rarity-unknown: #555;
+    --rarity-unknown-bg: #55555522;
+}
+
+.rarity-badge.unknown {
+    background: var(--rarity-unknown);
+    box-shadow: 0 0 4px var(--rarity-unknown);
+}
+
+.recipe-item-tag.rarity-unknown { border-left: 3px solid var(--rarity-unknown); }
+.inventory-item.rarity-unknown { border-left: 4px solid var(--rarity-unknown); }
+.recipe-detail-item.rarity-unknown { border-left: 4px solid var(--rarity-unknown); }
+.add-item-option.rarity-unknown { border-left: 4px solid var(--rarity-unknown); }
+
+.rarity-label.unknown { color: var(--text-muted); }
+
+/* Esconde em mobile */
+@media (max-width: 480px) {
+    .rarity-indicator { display: none; }
+}
