@@ -107,6 +107,15 @@ function timeAgo(ts) {
 }
 
 // ============================================
+// HELPER: Fecha todos os modais (exceto login)
+// ============================================
+function closeAllModals() {
+    document.querySelectorAll('.modal:not(.hidden)').forEach(m => {
+        if (m.id !== 'loginModal') m.classList.add('hidden');
+    });
+}
+
+// ============================================
 // RENDER ALL
 // ============================================
 function renderAll() {
@@ -322,6 +331,7 @@ function setupEvents() {
 
         if (typeof cloudSync !== 'undefined') cloudSync.logout();
 
+        closeAllModals();
         el.loginModal.classList.remove('hidden');
         el.loginInput.value = '';
         if (el.pinInput) el.pinInput.value = '';
@@ -362,7 +372,9 @@ function setupEvents() {
         invSearchTimer = setTimeout(renderInventory, 300);
     });
 
+    // ===== ABRIR MODAL "ADICIONAR ITEM" =====
     el.btnAddItem.addEventListener('click', () => {
+        closeAllModals(); // Fecha qualquer outro modal antes
         el.addItemModal.classList.remove('hidden');
         el.addItemSearch.value = '';
         renderAddItemList();
@@ -383,7 +395,9 @@ function setupEvents() {
 
     el.craftedCategoryFilter.addEventListener('change', renderCrafted);
 
+    // ===== ABRIR MODAL "IMPORTAR/EXPORTAR" =====
     el.btnImportExport.addEventListener('click', () => {
+        closeAllModals(); // Fecha qualquer outro modal antes
         el.exportData.value = inv.exportData();
         el.importData.value = '';
         if (typeof renderBackupInfo === 'function') renderBackupInfo();
@@ -447,10 +461,12 @@ function setupEvents() {
         showToast('Sincronizado!');
     });
 
+    // ===== HANDLERS DE FECHAMENTO DE MODAIS =====
     if (typeof setupModalCloseHandlers === 'function') {
         setupModalCloseHandlers();
     }
 
+    // ===== AUTO-BACKUP A CADA 60s =====
     setInterval(() => {
         if (inv.currentUser && inv.isDirty()) {
             inv.createBackup();
@@ -458,6 +474,7 @@ function setupEvents() {
         }
     }, 60000);
 
+    // ===== SALVAR AO FECHAR =====
     window.addEventListener('beforeunload', () => {
         if (inv.currentUser) {
             inv.save();
@@ -468,6 +485,7 @@ function setupEvents() {
         }
     });
 
+    // ===== ATALHO Ctrl+S =====
     document.addEventListener('keydown', (e) => {
         if ((e.ctrlKey || e.metaKey) && e.key === 's') {
             e.preventDefault();
