@@ -133,31 +133,44 @@ function updateBackupBadge() {
 function updateApiStatus() {
     if (!API_LOADED) {
         el.apiStatusBadge.className = 'api-status offline';
-        el.apiStatusBadge.textContent = 'ERRO';
+        el.apiStatusBadge.textContent = 'CARREGANDO';
+        el.apiStatusBadge.title = '⏳ Aguardando dados das receitas. Se ficar muito tempo assim, recarregue a página.';
         return;
     }
+
+    const total = RECIPES.length;
+    const compTotal = ALL_COMPONENTS.length;
+
     if (API_SOURCE === 'cache-expired') {
         el.apiStatusBadge.className = 'api-status offline';
         el.apiStatusBadge.textContent = 'OFFLINE';
+        el.apiStatusBadge.title = `📴 OFFLINE — Sem conexão com a internet.\nUsando dados antigos do cache.\n\n📊 ${total} receitas | ${compTotal} componentes`;
     } else if (API_SOURCE === 'local') {
         el.apiStatusBadge.className = 'api-status online';
         el.apiStatusBadge.textContent = 'LOCAL ✓';
+        el.apiStatusBadge.title = `✅ LOCAL — Dados embutidos no app (instantâneo).\nReceitas extras estão sendo carregadas em background.\n\n📊 ${total} receitas | ${compTotal} componentes`;
+    } else if (API_SOURCE === 'cache') {
+        el.apiStatusBadge.className = 'api-status online';
+        el.apiStatusBadge.textContent = 'CACHE ✓';
+        el.apiStatusBadge.title = `💾 CACHE — Dados carregados rapidamente do navegador.\nÚltima atualização há menos de 24h.\n\n📊 ${total} receitas | ${compTotal} componentes`;
     } else {
         el.apiStatusBadge.className = 'api-status online';
-        el.apiStatusBadge.textContent = API_SOURCE === 'cache' ? 'CACHE ✓' : 'API ✓';
+        el.apiStatusBadge.textContent = 'API ✓';
+        el.apiStatusBadge.title = `🌐 API — Dados frescos baixados da internet.\n\n📊 ${total} receitas | ${compTotal} componentes`;
     }
-    el.apiStatusBadge.title = `${RECIPES.length} receitas | ${ALL_COMPONENTS.length} componentes | via ${API_SOURCE}`;
 }
 
-function populateCategories() {
-    const cats = WarframeAPI.getCategories(RECIPES);
-    el.categoryFilter.innerHTML = '<option value="all">Todas Categorias</option>';
-    cats.forEach(cat => {
-        const opt = document.createElement('option');
-        opt.value = cat;
-        opt.textContent = cat;
-        el.categoryFilter.appendChild(opt);
-    });
+function updateBackupBadge() {
+    const ls = inv.getLastSave();
+    el.backupBadge.className = 'backup-indicator ok';
+
+    if (ls) {
+        el.backupBadge.textContent = '💾 SALVO';
+        el.backupBadge.title = `💾 SALVO — Seu inventário está seguro!\n\nÚltimo save: ${timeAgo(ls)}\nLocal: navegador (localStorage + IndexedDB)\nNuvem: Supabase (sincronizado automaticamente)`;
+    } else {
+        el.backupBadge.textContent = '⚠️';
+        el.backupBadge.title = '⚠️ Nenhum dado salvo ainda. Adicione itens ao inventário para começar.';
+    }
 }
 
 // ============================================
