@@ -115,4 +115,456 @@ function renderAll() {
     try { renderRecipeStats(); } catch (e) { console.error('renderRecipeStats:', e); }
     try { renderInventory(); } catch (e) { console.error('renderInventory:', e); }
     try { renderInventoryStats(); } catch (e) { console.error('renderInventoryStats:', e); }
-    try { renderCrafted(); } catch 
+    try { renderCrafted(); } catch (e) { console.error('renderCrafted:', e); }
+    try { updateBackupBadge(); } catch (e) { console.error('updateBackupBadge:', e); }
+}
+
+// ============================================
+// BADGES com TOOLTIPS
+// ============================================
+function updateBackupBadge() {
+    const ls = inv.getLastSave();
+    el.backupBadge.className = 'backup-indicator ok';
+
+    if (ls) {
+        el.backupBadge.textContent = '💾 SALVO';
+        el.backupBadge.title = `💾 SALVO — Seu inventário está seguro!\n\nÚltimo save: ${timeAgo(ls)}\nLocal: navegador (localStorage + IndexedDB)\nNuvem: Supabase (sincronizado automaticamente)`;
+    } else {
+        el.backupBadge.textContent = '⚠️';
+        el.backupBadge.title = '⚠️ Nenhum dado salvo ainda. Adicione itens ao inventário para começar.';
+    }
+}
+
+function updateApiStatus() {
+    if (!API_LOADED) {
+        el.apiStatusBadge.className = 'api-status offline';
+        el.apiStatusBadge.textContent = 'CARREGANDO';
+        el.apiStatusBadge.title = '⏳ Aguardando dados das receitas. Se ficar muito tempo assim, recarregue a página.';
+        return;
+    }
+
+    const total = RECIPES.length;
+    const compTotal = ALL_COMPONENTS.length;
+
+    if (API_SOURCE === 'cache-expired') {
+        el.apiStatusBadge.className = 'api-status offline';
+        el.apiStatusBadge.textContent = 'OFFLINE';
+        el.apiStatusBadge.title = `📴 OFFLINE — Sem conexão com a internet.\nUsando dados antigos do cache.\n\n📊 ${total} receitas | ${compTotal} componentes`;
+    } else if (API_SOURCE === 'local') {
+        el.apiStatusBadge.className = 'api-status online';
+        el.apiStatusBadge.textContent = 'LOCAL ✓';
+        el.apiStatusBadge.title = `✅ LOCAL — Dados embutidos no app (instantâneo).\nReceitas extras estão sendo carregadas em background.\n\n📊 ${total} receitas | ${compTotal} componentes`;
+    } else if (API_SOURCE === 'cache') {
+        el.apiStatusBadge.className = 'api-status online';
+        el.apiStatusBadge.textContent = 'CACHE ✓';
+        el.apiStatusBadge.title = `💾 CACHE — Dados carregados rapidamente do navegador.\nÚltima atualização há menos de 24h.\n\n📊 ${total} receitas | ${compTotal} componentes`;
+    } else {
+        el.apiStatusBadge.className = 'api-status online';
+        el.apiStatusBadge.textContent = 'API ✓';
+        el.apiStatusBadge.title = `🌐 API — Dados frescos baixados da internet.\n\n📊 ${total} receitas | ${compTotal} componentes`;
+    }
+}
+
+// ============================================
+// POPULATE CATEGORIES
+// ============================================
+function populateCategories() {
+    if (!el.categoryFilter) return;
+
+    const cats = WarframeAPI.getCategories(RECIPES);
+    el.categoryFilter.innerHTML = '<option value="all">Todas Categorias</option>';
+    cats.forEach(cat => {
+        const opt = document.createElement('option');
+        opt.value = cat;
+        opt.textContent = cat;
+        el.categoryFilter.appendChild(opt);
+    });
+}
+
+// ============================================
+// LOGIN COM SUPABASE
+// ============================================
+let loginCheckTimeout = null;
+
+function setupLoginCheck() {
+    el.loginInput.addEventListener('input', () => {
+        clearTimeout(loginCheckTimeout);
+        const username = el.loginInput.value.trim();
+
+        if (username.length < 2) {
+            el.pinSection.style.display = 'none';
+            el.loginSubtitle.textContent = 'Digite seu nome para entrar ou criar sua conta';
+            return;
+        }
+
+        loginCheckTimeout = setTimeout(async () => {
+            try {
+                if (typeof supabaseClient === 'undefined') {
+                    el.loginSubtitle.textContent = 'Modo local — sem PIN necessário';
+                    el.pinSection.style.display = 'none';
+                    return;
+                }
+
+                const { data } = await supabaseClient
+                    .from('profiles')
+                    .select('id, pin_hash')
+                    .eq('username', username.toLowerCase().trim())
+                    .maybeSingle();
+
+                if (data) {
+                    el.loginSubtitle.textContent = `Bem-vindo de volta, ${username}!`;
+                    if (data.pin_hash) {
+                        el.pinSection.style.display = 'block';
+                        el.pinHint.textContent = 'Digite seu PIN para entrar';
+                        el.pinInput.placeholder = 'PIN (4 dígitos)';
+                    } else {
+                        el.pinSection.style.display = 'none';
+                    }
+                } else {
+                    el.loginSubtitle.textContent = `Criar conta para "${username}"`;
+                    el.pinSection.style.display = 'block';
+                    el.pinHint.textContent = 'Crie um PIN (opcional, mas recomendado)';
+                    el.pinInput.placeholder = 'PIN novo (opcional)';
+                }
+            } catch (e) {
+                console.warn('[Login] Sem conexão:', e.message);
+                el.loginSubtitle.textContent = 'Modo offline — PIN não necessário';
+                el.pinSection.style.display = 'none';
+            }
+        }, 500);
+    });
+}
+
+async function handleLogin() {
+    const username = el.loginInput.value.trim();
+    if (!username || username.length < 2) {
+        el.loginStatus.className = 'login-status error';
+        el.loginStatus.textContent = 'Nome precisa ter pelo menos 2 caracteres';
+        return;
+    }
+
+    const pin = el.pinInput ? el.pinInput.value.trim() : '';
+
+    el.btnLogin.disabled = true;
+    el.loginStatus.className = 'login-status loading';
+    el.loginStatus.textContent = 'Conectando...';
+
+    try {
+        inv.loadUser(username);
+        el.userName.textContent = username.toUpperCase();
+        console.log('[Login] Usuário local carregado:', inv.currentUser);
+    } catch (e) {
+        console.error('[Login] Erro ao carregar local:', e);
+    }
+
+    if (navigator.onLine && typeof cloudSync !== 'undefined') {
+        try {
+            const result = await cloudSync.loginOrCreate(username, pin);
+            if (!result.success) {
+                el.loginStatus.className = 'login-status error';
+                el.loginStatus.textContent = result.error || 'Erro ao conectar';
+                el.btnLogin.disabled = false;
+                return;
+            }
+            el.loginStatus.className = 'login-status success';
+            el.loginStatus.textContent = result.isNew ? '✅ Conta criada!' : '✅ Logado com sucesso!';
+        } catch (e) {
+            console.warn('[Login] Sync falhou, modo local:', e);
+            el.loginStatus.className = 'login-status loading';
+            el.loginStatus.textContent = '📴 Modo local';
+        }
+    } else {
+        el.loginStatus.className = 'login-status loading';
+        el.loginStatus.textContent = '📴 Modo offline';
+        if (typeof setSyncStatus === 'function') {
+            setSyncStatus('offline', '📴 OFFLINE');
+        }
+    }
+
+    setTimeout(() => {
+        el.loginModal.classList.add('hidden');
+        el.btnLogin.disabled = false;
+        el.loginStatus.textContent = '';
+        renderAll();
+    }, 800);
+}
+
+// ============================================
+// SETUP EVENTOS
+// ============================================
+function setupEvents() {
+    el.btnLogin.addEventListener('click', handleLogin);
+
+    el.loginInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            if (el.pinSection.style.display !== 'none' && el.pinInput && !el.pinInput.value) {
+                el.pinInput.focus();
+            } else {
+                handleLogin();
+            }
+        }
+    });
+
+    if (el.pinInput) {
+        el.pinInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') handleLogin();
+        });
+    }
+
+    setupLoginCheck();
+
+    el.btnChangeUser.addEventListener('click', () => {
+        if (inv.currentUser) {
+            inv.save();
+            inv.createBackup();
+            if (typeof cloudSync !== 'undefined') cloudSync.push();
+        }
+
+        if (typeof cloudSync !== 'undefined') cloudSync.logout();
+
+        el.loginModal.classList.remove('hidden');
+        el.loginInput.value = '';
+        if (el.pinInput) el.pinInput.value = '';
+        el.pinSection.style.display = 'none';
+        el.loginStatus.textContent = '';
+        el.loginSubtitle.textContent = 'Digite seu nome para entrar ou criar sua conta';
+
+        setTimeout(() => el.loginInput.focus(), 100);
+    });
+
+    document.querySelectorAll('.nav-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            const target = document.getElementById(`${tab.dataset.tab}Tab`);
+            if (target) target.classList.add('active');
+        });
+    });
+
+    if (typeof setupRecipeSearchDebounce === 'function') {
+        setupRecipeSearchDebounce();
+    }
+
+    el.categoryFilter.addEventListener('change', () => {
+        if (typeof recipePage !== 'undefined') recipePage = 0;
+        renderRecipes();
+    });
+
+    el.progressFilter.addEventListener('change', () => {
+        if (typeof recipePage !== 'undefined') recipePage = 0;
+        renderRecipes();
+    });
+
+    let invSearchTimer = null;
+    el.inventorySearch.addEventListener('input', () => {
+        clearTimeout(invSearchTimer);
+        invSearchTimer = setTimeout(renderInventory, 300);
+    });
+
+    el.btnAddItem.addEventListener('click', () => {
+        el.addItemModal.classList.remove('hidden');
+        el.addItemSearch.value = '';
+        renderAddItemList();
+        setTimeout(() => el.addItemSearch.focus(), 100);
+    });
+
+    let addSearchTimer = null;
+    el.addItemSearch.addEventListener('input', () => {
+        clearTimeout(addSearchTimer);
+        addSearchTimer = setTimeout(renderAddItemList, 300);
+    });
+
+    let craftedSearchTimer = null;
+    el.craftedSearch.addEventListener('input', () => {
+        clearTimeout(craftedSearchTimer);
+        craftedSearchTimer = setTimeout(renderCrafted, 300);
+    });
+
+    el.craftedCategoryFilter.addEventListener('change', renderCrafted);
+
+    el.btnImportExport.addEventListener('click', () => {
+        el.exportData.value = inv.exportData();
+        el.importData.value = '';
+        if (typeof renderBackupInfo === 'function') renderBackupInfo();
+        el.importExportModal.classList.remove('hidden');
+    });
+
+    el.btnCopyExport.addEventListener('click', () => {
+        el.exportData.select();
+        navigator.clipboard.writeText(el.exportData.value)
+            .then(() => showToast('Copiado!'))
+            .catch(() => {
+                document.execCommand('copy');
+                showToast('Copiado!');
+            });
+    });
+
+    el.btnImport.addEventListener('click', () => {
+        const data = el.importData.value.trim();
+        if (!data) {
+            showToast('Cole seus dados antes de importar', 'error');
+            return;
+        }
+        if (inv.importData(data)) {
+            showToast('Importado com sucesso!');
+            el.importExportModal.classList.add('hidden');
+            invalidateProgressCache();
+            renderAll();
+        } else {
+            showToast('Formato inválido', 'error');
+        }
+    });
+
+    el.btnRefreshApi.addEventListener('click', async () => {
+        showToast('Atualizando...');
+        el.loadingScreen.classList.remove('hidden');
+        el.loadingScreen.style.opacity = '1';
+        const success = await loadAPI(true);
+        if (success) {
+            populateCategories();
+            if (typeof populateCraftedCategories === 'function') populateCraftedCategories();
+            invalidateProgressCache();
+            if (typeof applyRaritiesToCompMap === 'function' && typeof RARITY_LOADED !== 'undefined' && RARITY_LOADED) {
+                applyRaritiesToCompMap();
+            }
+            renderAll();
+            updateApiStatus();
+            showToast(`${RECIPES.length} receitas atualizadas!`);
+        } else {
+            showToast('Falha ao atualizar', 'error');
+        }
+        el.loadingScreen.classList.add('hidden');
+    });
+
+    el.btnForceSync.addEventListener('click', async () => {
+        if (typeof cloudSync === 'undefined' || !cloudSync.userId) {
+            showToast('Faça login primeiro', 'error');
+            return;
+        }
+        showToast('Sincronizando...');
+        await cloudSync.push();
+        showToast('Sincronizado!');
+    });
+
+    if (typeof setupModalCloseHandlers === 'function') {
+        setupModalCloseHandlers();
+    }
+
+    setInterval(() => {
+        if (inv.currentUser && inv.isDirty()) {
+            inv.createBackup();
+            updateBackupBadge();
+        }
+    }, 60000);
+
+    window.addEventListener('beforeunload', () => {
+        if (inv.currentUser) {
+            inv.save();
+            if (inv.isDirty()) inv.createBackup();
+            if (typeof cloudSync !== 'undefined' && cloudSync.userId && navigator.onLine) {
+                cloudSync.push();
+            }
+        }
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+            e.preventDefault();
+            if (inv.currentUser) {
+                inv.save();
+                inv.createBackup();
+                if (typeof cloudSync !== 'undefined') cloudSync.push();
+                showToast('Salvo! (Ctrl+S)');
+            }
+        }
+    });
+}
+
+// ============================================
+// BOOT
+// ============================================
+async function boot() {
+    console.log('[Boot] Iniciando aplicação...');
+    setProgress(0, 'Inicializando...');
+
+    let apiOk = false;
+    try {
+        apiOk = await loadAPI();
+    } catch (e) {
+        console.error('[Boot] Erro ao carregar API:', e);
+    }
+
+    if (!apiOk) {
+        el.loadingError.style.display = 'block';
+        el.loadingError.innerHTML = `
+            <p>⚠️ Não foi possível carregar os dados.</p>
+            <button onclick="location.reload()">TENTAR NOVAMENTE</button>`;
+        return;
+    }
+
+    populateCategories();
+    if (typeof populateCraftedCategories === 'function') {
+        populateCraftedCategories();
+    }
+    updateApiStatus();
+    setupEvents();
+
+    // ⭐ Inicia raridades em background
+    if (typeof initRarities === 'function') {
+        initRarities();
+    }
+
+    // ⭐ Inicia receitas extras em background
+    if (typeof initExtraRecipes === 'function') {
+        initExtraRecipes();
+    }
+
+    setTimeout(() => {
+        el.loadingScreen.classList.add('hidden');
+        el.app.style.display = 'block';
+    }, 300);
+
+    const savedCloudId = InventoryManager.getSavedCloudUserId();
+    const lastUser = InventoryManager.getLastUser();
+
+    console.log('[Boot] savedCloudId:', savedCloudId);
+    console.log('[Boot] lastUser:', lastUser);
+
+    if (lastUser) {
+        try {
+            inv.loadUser(lastUser);
+            el.userName.textContent = lastUser.toUpperCase();
+            console.log('[Boot] Usuário carregado:', inv.currentUser);
+
+            setTimeout(() => renderAll(), 400);
+
+            if (savedCloudId && navigator.onLine && typeof cloudSync !== 'undefined') {
+                cloudSync.resumeSession(savedCloudId).then(ok => {
+                    if (ok) {
+                        invalidateProgressCache();
+                        renderAll();
+                        showToast('Sincronizado com a nuvem!');
+                    }
+                }).catch(e => {
+                    console.warn('[Boot] Erro ao sincronizar:', e);
+                });
+            }
+        } catch (e) {
+            console.error('[Boot] Erro ao carregar usuário:', e);
+            el.loginModal.classList.remove('hidden');
+            setTimeout(() => el.loginInput.focus(), 500);
+        }
+    } else {
+        console.log('[Boot] Sem usuário salvo, abrindo login');
+        setTimeout(() => {
+            el.loginModal.classList.remove('hidden');
+            el.loginInput.focus();
+        }, 500);
+    }
+}
+
+// ============================================
+// INICIA
+// ============================================
+boot();
