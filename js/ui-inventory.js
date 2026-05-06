@@ -1,7 +1,14 @@
 /**
  * ui-inventory.js
- * Renderiza lista do inventário, stats e modal de adicionar item
+ * Renderiza inventário e modal de adicionar item com raridade
  */
+
+function getRarityNameInv(rarity) {
+    if (rarity === 'common') return 'Comum';
+    if (rarity === 'uncommon') return 'Incomum';
+    if (rarity === 'rare') return 'Raro';
+    return '?';
+}
 
 function renderInventory() {
     const search = normalize(el.inventorySearch.value);
@@ -23,15 +30,20 @@ function renderInventory() {
     }
 
     items.forEach(item => {
-        const info = COMP_MAP[item.id] || { displayName: item.id, parentName: '?' };
+        const info = COMP_MAP[item.id] || { displayName: item.id, parentName: '?', rarity: 'unknown' };
+        const rarity = info.rarity || 'unknown';
+        const rarityName = getRarityNameInv(rarity);
         const recipes = inv.findRecipesUsing(item.id);
         const rt = recipes.length ? `Receita: ${recipes.map(r => r.name).join(', ')}` : 'Sem receita';
 
         const div = document.createElement('div');
-        div.className = 'inventory-item';
+        div.className = `inventory-item rarity-${rarity}`;
         div.innerHTML = `
             <div class="inventory-item-info">
-                <div class="inventory-item-name">${info.displayName}</div>
+                <div class="inventory-item-name">
+                    <span class="rarity-badge ${rarity}"></span>${info.displayName}
+                    <span class="rarity-label ${rarity}" style="margin-left:6px;">${rarityName}</span>
+                </div>
                 <div class="inventory-item-parent">📦 ${info.parentName}</div>
                 <div class="inventory-item-recipes">${rt}</div>
             </div>
@@ -53,10 +65,12 @@ function renderInventory() {
             }
             renderAll();
         });
+
         div.querySelector('.plus').addEventListener('click', () => {
             inv.setQty(item.id, item.quantity + 1);
             renderAll();
         });
+
         div.querySelector('.delete-btn').addEventListener('click', () => {
             inv.removeItem(item.id);
             showToast(`${info.displayName} removido`, 'error');
@@ -71,6 +85,7 @@ function renderInventoryStats() {
     const items = inv.getAllItems();
     const u = items.length;
     const t = items.reduce((s, i) => s + i.quantity, 0);
+
     el.inventoryStats.innerHTML = `
         <div class="stat-card"><div class="stat-icon blue">📦</div><div class="stat-info"><div class="stat-value">${u}</div><div class="stat-label">Itens Únicos</div></div></div>
         <div class="stat-card"><div class="stat-icon gold">🔢</div><div class="stat-info"><div class="stat-value">${t}</div><div class="stat-label">Total Peças</div></div></div>
@@ -82,25 +97,50 @@ function renderAddItemList() {
     let items = ALL_COMPONENTS;
 
     if (search) {
-        items = items.filter(c => normalize(c.displayName).includes(search) || normalize(c.parentName).includes(search));
+        items = items.filter(c =>
+            normalize(c.displayName).includes(search) ||
+            normalize(c.parentName).includes(search)
+        );
     }
 
     const display = items.slice(0, 80);
     el.addItemList.innerHTML = '';
 
+    // Legenda de raridade
+    const legend = document.createElement('div');
+    legend.className = 'rarity-legend';
+    legend.innerHTML = `
+        <strong style="color:var(--text-primary);font-size:11px;letter-spacing:1px;">RARIDADE:</strong>
+        <span class="rarity-legend-item"><span class="rarity-badge common"></span>Comum</span>
+        <span class="rarity-legend-item"><span class="rarity-badge uncommon"></span>Incomum</span>
+        <span class="rarity-legend-item"><span class="rarity-badge rare"></span>Raro</span>
+        <span class="rarity-legend-item"><span class="rarity-badge unknown"></span>?</span>`;
+    el.addItemList.appendChild(legend);
+
     if (!display.length) {
-        el.addItemList.innerHTML = `<div class="empty-state" style="padding:20px;"><p>Nenhum item encontrado</p></div>`;
+        const empty = document.createElement('div');
+        empty.className = 'empty-state';
+        empty.style.padding = '20px';
+        empty.innerHTML = '<p>Nenhum item encontrado</p>';
+        el.addItemList.appendChild(empty);
         return;
     }
 
     display.forEach(comp => {
         const inI = inv.hasItem(comp.id);
         const qty = inv.getQty(comp.id);
+        const rarity = comp.rarity || 'unknown';
+        const rarityName = getRarityNameInv(rarity);
+
         const div = document.createElement('div');
-        div.className = `add-item-option${inI ? ' in-inventory' : ''}`;
+        div.className = `add-item-option rarity-${rarity}${inI ? ' in-inventory' : ''}`;
         div.innerHTML = `
             <div style="min-width:0;flex:1;">
-                <div class="add-item-option-name">${comp.displayName}${inI ? ` <small style="color:var(--success);">(x${qty})</small>` : ''}</div>
+                <div class="add-item-option-name">
+                    <span class="rarity-badge ${rarity}"></span>${comp.displayName}
+                    ${inI ? ` <small style="color:var(--success);">(x${qty})</small>` : ''}
+                    <span class="rarity-label ${rarity}" style="margin-left:6px;">${rarityName}</span>
+                </div>
                 <div class="add-item-option-sub">📦 ${comp.parentName}</div>
             </div>
             <button class="add-item-option-btn ${inI ? 'remove' : 'add'}">${inI ? 'Remover' : 'Adicionar'}</button>`;
