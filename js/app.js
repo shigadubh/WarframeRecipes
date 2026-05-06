@@ -108,7 +108,7 @@ function timeAgo(ts) {
 }
 
 // ============================================
-// RENDER ALL (com proteção)
+// RENDER ALL
 // ============================================
 function renderAll() {
     try { invalidateProgressCache(); } catch (e) { console.warn('Cache invalidate:', e); }
@@ -121,7 +121,7 @@ function renderAll() {
 }
 
 // ============================================
-// BADGES DE STATUS
+// BADGES
 // ============================================
 function updateBackupBadge() {
     const ls = inv.getLastSave();
@@ -161,7 +161,7 @@ function populateCategories() {
 }
 
 // ============================================
-// LOGIN COM SUPABASE (com proteção offline)
+// LOGIN COM SUPABASE
 // ============================================
 let loginCheckTimeout = null;
 
@@ -228,7 +228,6 @@ async function handleLogin() {
     el.loginStatus.className = 'login-status loading';
     el.loginStatus.textContent = 'Conectando...';
 
-    // 1. Carrega inventário local primeiro (resposta instantânea)
     try {
         inv.loadUser(username);
         el.userName.textContent = username.toUpperCase();
@@ -237,22 +236,17 @@ async function handleLogin() {
         console.error('[Login] Erro ao carregar local:', e);
     }
 
-    // 2. Tenta sincronizar com Supabase
     if (navigator.onLine && typeof cloudSync !== 'undefined') {
         try {
             const result = await cloudSync.loginOrCreate(username, pin);
-
             if (!result.success) {
                 el.loginStatus.className = 'login-status error';
                 el.loginStatus.textContent = result.error || 'Erro ao conectar';
                 el.btnLogin.disabled = false;
                 return;
             }
-
             el.loginStatus.className = 'login-status success';
-            el.loginStatus.textContent = result.isNew
-                ? '✅ Conta criada!'
-                : '✅ Logado com sucesso!';
+            el.loginStatus.textContent = result.isNew ? '✅ Conta criada!' : '✅ Logado com sucesso!';
         } catch (e) {
             console.warn('[Login] Sync falhou, modo local:', e);
             el.loginStatus.className = 'login-status loading';
@@ -266,7 +260,6 @@ async function handleLogin() {
         }
     }
 
-    // 3. Fecha modal e renderiza
     setTimeout(() => {
         el.loginModal.classList.add('hidden');
         el.btnLogin.disabled = false;
@@ -321,7 +314,7 @@ function setupEvents() {
         setTimeout(() => el.loginInput.focus(), 100);
     });
 
-    // ----- NAVEGAÇÃO POR TABS -----
+    // ----- TABS -----
     document.querySelectorAll('.nav-tab').forEach(tab => {
         tab.addEventListener('click', () => {
             document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
@@ -332,7 +325,7 @@ function setupEvents() {
         });
     });
 
-    // ----- BUSCA DE RECEITAS -----
+    // ----- BUSCA RECEITAS -----
     if (typeof setupRecipeSearchDebounce === 'function') {
         setupRecipeSearchDebounce();
     }
@@ -347,7 +340,7 @@ function setupEvents() {
         renderRecipes();
     });
 
-    // ----- BUSCA DO INVENTÁRIO -----
+    // ----- BUSCA INVENTÁRIO -----
     let invSearchTimer = null;
     el.inventorySearch.addEventListener('input', () => {
         clearTimeout(invSearchTimer);
@@ -368,7 +361,7 @@ function setupEvents() {
         addSearchTimer = setTimeout(renderAddItemList, 300);
     });
 
-    // ----- BUSCA DE FABRICADOS -----
+    // ----- BUSCA FABRICADOS -----
     let craftedSearchTimer = null;
     el.craftedSearch.addEventListener('input', () => {
         clearTimeout(craftedSearchTimer);
@@ -421,6 +414,12 @@ function setupEvents() {
             populateCategories();
             if (typeof populateCraftedCategories === 'function') populateCraftedCategories();
             invalidateProgressCache();
+
+            // Re-aplica raridades (se já carregadas)
+            if (typeof applyRaritiesToCompMap === 'function' && RARITY_LOADED) {
+                applyRaritiesToCompMap();
+            }
+
             renderAll();
             updateApiStatus();
             showToast(`${RECIPES.length} receitas atualizadas!`);
@@ -441,7 +440,7 @@ function setupEvents() {
         showToast('Sincronizado!');
     });
 
-    // ----- FECHAR MODAIS -----
+    // ----- MODAIS -----
     if (typeof setupModalCloseHandlers === 'function') {
         setupModalCloseHandlers();
     }
@@ -454,7 +453,7 @@ function setupEvents() {
         }
     }, 60000);
 
-    // ----- SALVAR ANTES DE FECHAR -----
+    // ----- BEFORE UNLOAD -----
     window.addEventListener('beforeunload', () => {
         if (inv.currentUser) {
             inv.save();
@@ -465,7 +464,7 @@ function setupEvents() {
         }
     });
 
-    // ----- ATALHO Ctrl+S -----
+    // ----- CTRL+S -----
     document.addEventListener('keydown', (e) => {
         if ((e.ctrlKey || e.metaKey) && e.key === 's') {
             e.preventDefault();
@@ -480,13 +479,12 @@ function setupEvents() {
 }
 
 // ============================================
-// BOOT (com proteção robusta)
+// BOOT
 // ============================================
 async function boot() {
     console.log('[Boot] Iniciando aplicação...');
     setProgress(0, 'Inicializando...');
 
-    // 1. Carrega receitas
     let apiOk = false;
     try {
         apiOk = await loadAPI();
@@ -502,23 +500,23 @@ async function boot() {
         return;
     }
 
-    // 2. Popula filtros
     populateCategories();
     if (typeof populateCraftedCategories === 'function') {
         populateCraftedCategories();
     }
     updateApiStatus();
-
-    // 3. Vincula eventos
     setupEvents();
 
-    // 4. Mostra o app
+    // ⭐ Inicia raridades em background (não bloqueia)
+    if (typeof initRarities === 'function') {
+        initRarities();
+    }
+
     setTimeout(() => {
         el.loadingScreen.classList.add('hidden');
         el.app.style.display = 'block';
     }, 300);
 
-    // 5. Verifica sessão salva
     const savedCloudId = InventoryManager.getSavedCloudUserId();
     const lastUser = InventoryManager.getLastUser();
 
@@ -526,24 +524,19 @@ async function boot() {
     console.log('[Boot] lastUser:', lastUser);
 
     if (lastUser) {
-        // Tem usuário local salvo
         try {
             inv.loadUser(lastUser);
             el.userName.textContent = lastUser.toUpperCase();
             console.log('[Boot] Usuário carregado:', inv.currentUser);
 
-            // Renderiza com dados locais
             setTimeout(() => renderAll(), 400);
 
-            // Tenta sincronizar com a nuvem em background
             if (savedCloudId && navigator.onLine && typeof cloudSync !== 'undefined') {
                 cloudSync.resumeSession(savedCloudId).then(ok => {
                     if (ok) {
                         invalidateProgressCache();
                         renderAll();
                         showToast('Sincronizado com a nuvem!');
-                    } else {
-                        console.warn('[Boot] Não conseguiu retomar sessão da nuvem');
                     }
                 }).catch(e => {
                     console.warn('[Boot] Erro ao sincronizar:', e);
@@ -555,7 +548,6 @@ async function boot() {
             setTimeout(() => el.loginInput.focus(), 500);
         }
     } else {
-        // Primeiro acesso - mostra login
         console.log('[Boot] Sem usuário salvo, abrindo login');
         setTimeout(() => {
             el.loginModal.classList.remove('hidden');
@@ -564,7 +556,4 @@ async function boot() {
     }
 }
 
-// ============================================
-// INICIA O APP
-// ============================================
 boot();
