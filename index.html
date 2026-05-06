@@ -238,6 +238,24 @@
                     <p>Backups automáticos locais:</p>
                     <div id="backupSlots" class="backup-slots"></div>
                 </div>
+                <!-- MANUAL CRAFT MODAL -->
+                <div id="manualCraftModal" class="modal hidden">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h2>🔨 MARCAR COMO FABRICADO</h2>
+                            <button class="modal-close" data-close="manualCraftModal">&times;</button>
+                        </div>
+                        <div class="modal-body">
+                            <p style="color:var(--text-muted);font-size:13px;margin-bottom:12px;">
+                                Marque qualquer item como fabricado sem precisar ter os componentes no inventário.
+                            </p>
+                            <div class="search-box modal-search">
+                                <input type="text" id="manualCraftSearch" placeholder="🔍 Buscar receita...">
+                            </div>
+                            <div class="manual-craft-list" id="manualCraftList"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
