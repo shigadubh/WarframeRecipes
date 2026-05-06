@@ -1,144 +1,209 @@
-let RECIPES=[], ALL_COMPONENTS=[], COMP_MAP={}, API_LOADED=false, API_SOURCE='';
+/**
+ * api.js - Dados de receitas (local) + estrutura para raridades
+ */
 
+let RECIPES = [], ALL_COMPONENTS = [], COMP_MAP = {}, API_LOADED = false, API_SOURCE = '';
+
+// ============================================
+// SISTEMA DE RARIDADE
+// ============================================
+const RARITY = {
+    COMMON: 'common',
+    UNCOMMON: 'uncommon',
+    RARE: 'rare',
+    UNKNOWN: 'unknown'
+};
+
+// ============================================
+// BASE DE DADOS LOCAL
+// ============================================
+const LOCAL_RECIPES = [
+    // ===== WARFRAMES =====
+    { name:"Ash", category:"Warframe", components:[{id:"Ash::Blueprint",displayName:"Ash Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Ash::Neuroptics",displayName:"Ash Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Ash::Chassis",displayName:"Ash Chassis",rawName:"Chassis",requiredQty:1},{id:"Ash::Systems",displayName:"Ash Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Atlas", category:"Warframe", components:[{id:"Atlas::Blueprint",displayName:"Atlas Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Atlas::Neuroptics",displayName:"Atlas Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Atlas::Chassis",displayName:"Atlas Chassis",rawName:"Chassis",requiredQty:1},{id:"Atlas::Systems",displayName:"Atlas Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Banshee", category:"Warframe", components:[{id:"Banshee::Blueprint",displayName:"Banshee Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Banshee::Neuroptics",displayName:"Banshee Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Banshee::Chassis",displayName:"Banshee Chassis",rawName:"Chassis",requiredQty:1},{id:"Banshee::Systems",displayName:"Banshee Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Baruuk", category:"Warframe", components:[{id:"Baruuk::Blueprint",displayName:"Baruuk Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Baruuk::Neuroptics",displayName:"Baruuk Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Baruuk::Chassis",displayName:"Baruuk Chassis",rawName:"Chassis",requiredQty:1},{id:"Baruuk::Systems",displayName:"Baruuk Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Caliban", category:"Warframe", components:[{id:"Caliban::Blueprint",displayName:"Caliban Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Caliban::Neuroptics",displayName:"Caliban Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Caliban::Chassis",displayName:"Caliban Chassis",rawName:"Chassis",requiredQty:1},{id:"Caliban::Systems",displayName:"Caliban Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Chroma", category:"Warframe", components:[{id:"Chroma::Blueprint",displayName:"Chroma Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Chroma::Neuroptics",displayName:"Chroma Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Chroma::Chassis",displayName:"Chroma Chassis",rawName:"Chassis",requiredQty:1},{id:"Chroma::Systems",displayName:"Chroma Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Citrine", category:"Warframe", components:[{id:"Citrine::Blueprint",displayName:"Citrine Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Citrine::Neuroptics",displayName:"Citrine Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Citrine::Chassis",displayName:"Citrine Chassis",rawName:"Chassis",requiredQty:1},{id:"Citrine::Systems",displayName:"Citrine Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Dagath", category:"Warframe", components:[{id:"Dagath::Blueprint",displayName:"Dagath Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Dagath::Neuroptics",displayName:"Dagath Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Dagath::Chassis",displayName:"Dagath Chassis",rawName:"Chassis",requiredQty:1},{id:"Dagath::Systems",displayName:"Dagath Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Ember", category:"Warframe", components:[{id:"Ember::Blueprint",displayName:"Ember Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Ember::Neuroptics",displayName:"Ember Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Ember::Chassis",displayName:"Ember Chassis",rawName:"Chassis",requiredQty:1},{id:"Ember::Systems",displayName:"Ember Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Equinox", category:"Warframe", components:[{id:"Equinox::Blueprint",displayName:"Equinox Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Equinox::Neuroptics",displayName:"Equinox Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Equinox::Chassis",displayName:"Equinox Chassis",rawName:"Chassis",requiredQty:1},{id:"Equinox::Systems",displayName:"Equinox Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Excalibur", category:"Warframe", components:[{id:"Excalibur::Blueprint",displayName:"Excalibur Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Excalibur::Neuroptics",displayName:"Excalibur Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Excalibur::Chassis",displayName:"Excalibur Chassis",rawName:"Chassis",requiredQty:1},{id:"Excalibur::Systems",displayName:"Excalibur Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Frost", category:"Warframe", components:[{id:"Frost::Blueprint",displayName:"Frost Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Frost::Neuroptics",displayName:"Frost Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Frost::Chassis",displayName:"Frost Chassis",rawName:"Chassis",requiredQty:1},{id:"Frost::Systems",displayName:"Frost Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Gara", category:"Warframe", components:[{id:"Gara::Blueprint",displayName:"Gara Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Gara::Neuroptics",displayName:"Gara Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Gara::Chassis",displayName:"Gara Chassis",rawName:"Chassis",requiredQty:1},{id:"Gara::Systems",displayName:"Gara Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Garuda", category:"Warframe", components:[{id:"Garuda::Blueprint",displayName:"Garuda Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Garuda::Neuroptics",displayName:"Garuda Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Garuda::Chassis",displayName:"Garuda Chassis",rawName:"Chassis",requiredQty:1},{id:"Garuda::Systems",displayName:"Garuda Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Gauss", category:"Warframe", components:[{id:"Gauss::Blueprint",displayName:"Gauss Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Gauss::Neuroptics",displayName:"Gauss Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Gauss::Chassis",displayName:"Gauss Chassis",rawName:"Chassis",requiredQty:1},{id:"Gauss::Systems",displayName:"Gauss Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Grendel", category:"Warframe", components:[{id:"Grendel::Blueprint",displayName:"Grendel Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Grendel::Neuroptics",displayName:"Grendel Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Grendel::Chassis",displayName:"Grendel Chassis",rawName:"Chassis",requiredQty:1},{id:"Grendel::Systems",displayName:"Grendel Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Gyre", category:"Warframe", components:[{id:"Gyre::Blueprint",displayName:"Gyre Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Gyre::Neuroptics",displayName:"Gyre Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Gyre::Chassis",displayName:"Gyre Chassis",rawName:"Chassis",requiredQty:1},{id:"Gyre::Systems",displayName:"Gyre Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Harrow", category:"Warframe", components:[{id:"Harrow::Blueprint",displayName:"Harrow Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Harrow::Neuroptics",displayName:"Harrow Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Harrow::Chassis",displayName:"Harrow Chassis",rawName:"Chassis",requiredQty:1},{id:"Harrow::Systems",displayName:"Harrow Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Hildryn", category:"Warframe", components:[{id:"Hildryn::Blueprint",displayName:"Hildryn Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Hildryn::Neuroptics",displayName:"Hildryn Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Hildryn::Chassis",displayName:"Hildryn Chassis",rawName:"Chassis",requiredQty:1},{id:"Hildryn::Systems",displayName:"Hildryn Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Hydroid", category:"Warframe", components:[{id:"Hydroid::Blueprint",displayName:"Hydroid Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Hydroid::Neuroptics",displayName:"Hydroid Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Hydroid::Chassis",displayName:"Hydroid Chassis",rawName:"Chassis",requiredQty:1},{id:"Hydroid::Systems",displayName:"Hydroid Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Inaros", category:"Warframe", components:[{id:"Inaros::Blueprint",displayName:"Inaros Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Inaros::Neuroptics",displayName:"Inaros Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Inaros::Chassis",displayName:"Inaros Chassis",rawName:"Chassis",requiredQty:1},{id:"Inaros::Systems",displayName:"Inaros Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Ivara", category:"Warframe", components:[{id:"Ivara::Blueprint",displayName:"Ivara Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Ivara::Neuroptics",displayName:"Ivara Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Ivara::Chassis",displayName:"Ivara Chassis",rawName:"Chassis",requiredQty:1},{id:"Ivara::Systems",displayName:"Ivara Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Khora", category:"Warframe", components:[{id:"Khora::Blueprint",displayName:"Khora Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Khora::Neuroptics",displayName:"Khora Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Khora::Chassis",displayName:"Khora Chassis",rawName:"Chassis",requiredQty:1},{id:"Khora::Systems",displayName:"Khora Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Kullervo", category:"Warframe", components:[{id:"Kullervo::Blueprint",displayName:"Kullervo Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Kullervo::Neuroptics",displayName:"Kullervo Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Kullervo::Chassis",displayName:"Kullervo Chassis",rawName:"Chassis",requiredQty:1},{id:"Kullervo::Systems",displayName:"Kullervo Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Lavos", category:"Warframe", components:[{id:"Lavos::Blueprint",displayName:"Lavos Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Lavos::Neuroptics",displayName:"Lavos Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Lavos::Chassis",displayName:"Lavos Chassis",rawName:"Chassis",requiredQty:1},{id:"Lavos::Systems",displayName:"Lavos Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Limbo", category:"Warframe", components:[{id:"Limbo::Blueprint",displayName:"Limbo Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Limbo::Neuroptics",displayName:"Limbo Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Limbo::Chassis",displayName:"Limbo Chassis",rawName:"Chassis",requiredQty:1},{id:"Limbo::Systems",displayName:"Limbo Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Loki", category:"Warframe", components:[{id:"Loki::Blueprint",displayName:"Loki Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Loki::Neuroptics",displayName:"Loki Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Loki::Chassis",displayName:"Loki Chassis",rawName:"Chassis",requiredQty:1},{id:"Loki::Systems",displayName:"Loki Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Mag", category:"Warframe", components:[{id:"Mag::Blueprint",displayName:"Mag Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Mag::Neuroptics",displayName:"Mag Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Mag::Chassis",displayName:"Mag Chassis",rawName:"Chassis",requiredQty:1},{id:"Mag::Systems",displayName:"Mag Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Mesa", category:"Warframe", components:[{id:"Mesa::Blueprint",displayName:"Mesa Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Mesa::Neuroptics",displayName:"Mesa Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Mesa::Chassis",displayName:"Mesa Chassis",rawName:"Chassis",requiredQty:1},{id:"Mesa::Systems",displayName:"Mesa Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Mirage", category:"Warframe", components:[{id:"Mirage::Blueprint",displayName:"Mirage Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Mirage::Neuroptics",displayName:"Mirage Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Mirage::Chassis",displayName:"Mirage Chassis",rawName:"Chassis",requiredQty:1},{id:"Mirage::Systems",displayName:"Mirage Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Nekros", category:"Warframe", components:[{id:"Nekros::Blueprint",displayName:"Nekros Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Nekros::Neuroptics",displayName:"Nekros Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Nekros::Chassis",displayName:"Nekros Chassis",rawName:"Chassis",requiredQty:1},{id:"Nekros::Systems",displayName:"Nekros Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Nezha", category:"Warframe", components:[{id:"Nezha::Blueprint",displayName:"Nezha Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Nezha::Neuroptics",displayName:"Nezha Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Nezha::Chassis",displayName:"Nezha Chassis",rawName:"Chassis",requiredQty:1},{id:"Nezha::Systems",displayName:"Nezha Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Nidus", category:"Warframe", components:[{id:"Nidus::Blueprint",displayName:"Nidus Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Nidus::Neuroptics",displayName:"Nidus Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Nidus::Chassis",displayName:"Nidus Chassis",rawName:"Chassis",requiredQty:1},{id:"Nidus::Systems",displayName:"Nidus Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Nova", category:"Warframe", components:[{id:"Nova::Blueprint",displayName:"Nova Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Nova::Neuroptics",displayName:"Nova Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Nova::Chassis",displayName:"Nova Chassis",rawName:"Chassis",requiredQty:1},{id:"Nova::Systems",displayName:"Nova Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Nyx", category:"Warframe", components:[{id:"Nyx::Blueprint",displayName:"Nyx Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Nyx::Neuroptics",displayName:"Nyx Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Nyx::Chassis",displayName:"Nyx Chassis",rawName:"Chassis",requiredQty:1},{id:"Nyx::Systems",displayName:"Nyx Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Oberon", category:"Warframe", components:[{id:"Oberon::Blueprint",displayName:"Oberon Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Oberon::Neuroptics",displayName:"Oberon Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Oberon::Chassis",displayName:"Oberon Chassis",rawName:"Chassis",requiredQty:1},{id:"Oberon::Systems",displayName:"Oberon Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Octavia", category:"Warframe", components:[{id:"Octavia::Blueprint",displayName:"Octavia Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Octavia::Neuroptics",displayName:"Octavia Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Octavia::Chassis",displayName:"Octavia Chassis",rawName:"Chassis",requiredQty:1},{id:"Octavia::Systems",displayName:"Octavia Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Protea", category:"Warframe", components:[{id:"Protea::Blueprint",displayName:"Protea Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Protea::Neuroptics",displayName:"Protea Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Protea::Chassis",displayName:"Protea Chassis",rawName:"Chassis",requiredQty:1},{id:"Protea::Systems",displayName:"Protea Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Qorvex", category:"Warframe", components:[{id:"Qorvex::Blueprint",displayName:"Qorvex Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Qorvex::Neuroptics",displayName:"Qorvex Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Qorvex::Chassis",displayName:"Qorvex Chassis",rawName:"Chassis",requiredQty:1},{id:"Qorvex::Systems",displayName:"Qorvex Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Revenant", category:"Warframe", components:[{id:"Revenant::Blueprint",displayName:"Revenant Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Revenant::Neuroptics",displayName:"Revenant Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Revenant::Chassis",displayName:"Revenant Chassis",rawName:"Chassis",requiredQty:1},{id:"Revenant::Systems",displayName:"Revenant Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Rhino", category:"Warframe", components:[{id:"Rhino::Blueprint",displayName:"Rhino Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Rhino::Neuroptics",displayName:"Rhino Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Rhino::Chassis",displayName:"Rhino Chassis",rawName:"Chassis",requiredQty:1},{id:"Rhino::Systems",displayName:"Rhino Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Saryn", category:"Warframe", components:[{id:"Saryn::Blueprint",displayName:"Saryn Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Saryn::Neuroptics",displayName:"Saryn Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Saryn::Chassis",displayName:"Saryn Chassis",rawName:"Chassis",requiredQty:1},{id:"Saryn::Systems",displayName:"Saryn Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Sevagoth", category:"Warframe", components:[{id:"Sevagoth::Blueprint",displayName:"Sevagoth Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Sevagoth::Neuroptics",displayName:"Sevagoth Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Sevagoth::Chassis",displayName:"Sevagoth Chassis",rawName:"Chassis",requiredQty:1},{id:"Sevagoth::Systems",displayName:"Sevagoth Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Styanax", category:"Warframe", components:[{id:"Styanax::Blueprint",displayName:"Styanax Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Styanax::Neuroptics",displayName:"Styanax Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Styanax::Chassis",displayName:"Styanax Chassis",rawName:"Chassis",requiredQty:1},{id:"Styanax::Systems",displayName:"Styanax Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Titania", category:"Warframe", components:[{id:"Titania::Blueprint",displayName:"Titania Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Titania::Neuroptics",displayName:"Titania Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Titania::Chassis",displayName:"Titania Chassis",rawName:"Chassis",requiredQty:1},{id:"Titania::Systems",displayName:"Titania Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Trinity", category:"Warframe", components:[{id:"Trinity::Blueprint",displayName:"Trinity Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Trinity::Neuroptics",displayName:"Trinity Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Trinity::Chassis",displayName:"Trinity Chassis",rawName:"Chassis",requiredQty:1},{id:"Trinity::Systems",displayName:"Trinity Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Valkyr", category:"Warframe", components:[{id:"Valkyr::Blueprint",displayName:"Valkyr Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Valkyr::Neuroptics",displayName:"Valkyr Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Valkyr::Chassis",displayName:"Valkyr Chassis",rawName:"Chassis",requiredQty:1},{id:"Valkyr::Systems",displayName:"Valkyr Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Vauban", category:"Warframe", components:[{id:"Vauban::Blueprint",displayName:"Vauban Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Vauban::Neuroptics",displayName:"Vauban Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Vauban::Chassis",displayName:"Vauban Chassis",rawName:"Chassis",requiredQty:1},{id:"Vauban::Systems",displayName:"Vauban Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Volt", category:"Warframe", components:[{id:"Volt::Blueprint",displayName:"Volt Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Volt::Neuroptics",displayName:"Volt Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Volt::Chassis",displayName:"Volt Chassis",rawName:"Chassis",requiredQty:1},{id:"Volt::Systems",displayName:"Volt Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Voruna", category:"Warframe", components:[{id:"Voruna::Blueprint",displayName:"Voruna Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Voruna::Neuroptics",displayName:"Voruna Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Voruna::Chassis",displayName:"Voruna Chassis",rawName:"Chassis",requiredQty:1},{id:"Voruna::Systems",displayName:"Voruna Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Wisp", category:"Warframe", components:[{id:"Wisp::Blueprint",displayName:"Wisp Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Wisp::Neuroptics",displayName:"Wisp Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Wisp::Chassis",displayName:"Wisp Chassis",rawName:"Chassis",requiredQty:1},{id:"Wisp::Systems",displayName:"Wisp Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Wukong", category:"Warframe", components:[{id:"Wukong::Blueprint",displayName:"Wukong Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Wukong::Neuroptics",displayName:"Wukong Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Wukong::Chassis",displayName:"Wukong Chassis",rawName:"Chassis",requiredQty:1},{id:"Wukong::Systems",displayName:"Wukong Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Xaku", category:"Warframe", components:[{id:"Xaku::Blueprint",displayName:"Xaku Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Xaku::Neuroptics",displayName:"Xaku Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Xaku::Chassis",displayName:"Xaku Chassis",rawName:"Chassis",requiredQty:1},{id:"Xaku::Systems",displayName:"Xaku Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Yareli", category:"Warframe", components:[{id:"Yareli::Blueprint",displayName:"Yareli Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Yareli::Neuroptics",displayName:"Yareli Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Yareli::Chassis",displayName:"Yareli Chassis",rawName:"Chassis",requiredQty:1},{id:"Yareli::Systems",displayName:"Yareli Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Zephyr", category:"Warframe", components:[{id:"Zephyr::Blueprint",displayName:"Zephyr Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Zephyr::Neuroptics",displayName:"Zephyr Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Zephyr::Chassis",displayName:"Zephyr Chassis",rawName:"Chassis",requiredQty:1},{id:"Zephyr::Systems",displayName:"Zephyr Systems",rawName:"Systems",requiredQty:1}] },
+
+    // ===== WARFRAMES PRIME =====
+    { name:"Ash Prime", category:"Warframe Prime", components:[{id:"Ash Prime::Blueprint",displayName:"Ash Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Ash Prime::Neuroptics",displayName:"Ash Prime Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Ash Prime::Chassis",displayName:"Ash Prime Chassis",rawName:"Chassis",requiredQty:1},{id:"Ash Prime::Systems",displayName:"Ash Prime Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Atlas Prime", category:"Warframe Prime", components:[{id:"Atlas Prime::Blueprint",displayName:"Atlas Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Atlas Prime::Neuroptics",displayName:"Atlas Prime Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Atlas Prime::Chassis",displayName:"Atlas Prime Chassis",rawName:"Chassis",requiredQty:1},{id:"Atlas Prime::Systems",displayName:"Atlas Prime Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Banshee Prime", category:"Warframe Prime", components:[{id:"Banshee Prime::Blueprint",displayName:"Banshee Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Banshee Prime::Neuroptics",displayName:"Banshee Prime Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Banshee Prime::Chassis",displayName:"Banshee Prime Chassis",rawName:"Chassis",requiredQty:1},{id:"Banshee Prime::Systems",displayName:"Banshee Prime Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Baruuk Prime", category:"Warframe Prime", components:[{id:"Baruuk Prime::Blueprint",displayName:"Baruuk Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Baruuk Prime::Neuroptics",displayName:"Baruuk Prime Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Baruuk Prime::Chassis",displayName:"Baruuk Prime Chassis",rawName:"Chassis",requiredQty:1},{id:"Baruuk Prime::Systems",displayName:"Baruuk Prime Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Chroma Prime", category:"Warframe Prime", components:[{id:"Chroma Prime::Blueprint",displayName:"Chroma Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Chroma Prime::Neuroptics",displayName:"Chroma Prime Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Chroma Prime::Chassis",displayName:"Chroma Prime Chassis",rawName:"Chassis",requiredQty:1},{id:"Chroma Prime::Systems",displayName:"Chroma Prime Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Ember Prime", category:"Warframe Prime", components:[{id:"Ember Prime::Blueprint",displayName:"Ember Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Ember Prime::Neuroptics",displayName:"Ember Prime Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Ember Prime::Chassis",displayName:"Ember Prime Chassis",rawName:"Chassis",requiredQty:1},{id:"Ember Prime::Systems",displayName:"Ember Prime Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Equinox Prime", category:"Warframe Prime", components:[{id:"Equinox Prime::Blueprint",displayName:"Equinox Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Equinox Prime::Neuroptics",displayName:"Equinox Prime Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Equinox Prime::Chassis",displayName:"Equinox Prime Chassis",rawName:"Chassis",requiredQty:1},{id:"Equinox Prime::Systems",displayName:"Equinox Prime Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Frost Prime", category:"Warframe Prime", components:[{id:"Frost Prime::Blueprint",displayName:"Frost Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Frost Prime::Neuroptics",displayName:"Frost Prime Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Frost Prime::Chassis",displayName:"Frost Prime Chassis",rawName:"Chassis",requiredQty:1},{id:"Frost Prime::Systems",displayName:"Frost Prime Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Gara Prime", category:"Warframe Prime", components:[{id:"Gara Prime::Blueprint",displayName:"Gara Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Gara Prime::Neuroptics",displayName:"Gara Prime Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Gara Prime::Chassis",displayName:"Gara Prime Chassis",rawName:"Chassis",requiredQty:1},{id:"Gara Prime::Systems",displayName:"Gara Prime Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Garuda Prime", category:"Warframe Prime", components:[{id:"Garuda Prime::Blueprint",displayName:"Garuda Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Garuda Prime::Neuroptics",displayName:"Garuda Prime Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Garuda Prime::Chassis",displayName:"Garuda Prime Chassis",rawName:"Chassis",requiredQty:1},{id:"Garuda Prime::Systems",displayName:"Garuda Prime Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Gauss Prime", category:"Warframe Prime", components:[{id:"Gauss Prime::Blueprint",displayName:"Gauss Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Gauss Prime::Neuroptics",displayName:"Gauss Prime Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Gauss Prime::Chassis",displayName:"Gauss Prime Chassis",rawName:"Chassis",requiredQty:1},{id:"Gauss Prime::Systems",displayName:"Gauss Prime Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Grendel Prime", category:"Warframe Prime", components:[{id:"Grendel Prime::Blueprint",displayName:"Grendel Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Grendel Prime::Neuroptics",displayName:"Grendel Prime Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Grendel Prime::Chassis",displayName:"Grendel Prime Chassis",rawName:"Chassis",requiredQty:1},{id:"Grendel Prime::Systems",displayName:"Grendel Prime Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Harrow Prime", category:"Warframe Prime", components:[{id:"Harrow Prime::Blueprint",displayName:"Harrow Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Harrow Prime::Neuroptics",displayName:"Harrow Prime Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Harrow Prime::Chassis",displayName:"Harrow Prime Chassis",rawName:"Chassis",requiredQty:1},{id:"Harrow Prime::Systems",displayName:"Harrow Prime Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Hildryn Prime", category:"Warframe Prime", components:[{id:"Hildryn Prime::Blueprint",displayName:"Hildryn Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Hildryn Prime::Neuroptics",displayName:"Hildryn Prime Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Hildryn Prime::Chassis",displayName:"Hildryn Prime Chassis",rawName:"Chassis",requiredQty:1},{id:"Hildryn Prime::Systems",displayName:"Hildryn Prime Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Hydroid Prime", category:"Warframe Prime", components:[{id:"Hydroid Prime::Blueprint",displayName:"Hydroid Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Hydroid Prime::Neuroptics",displayName:"Hydroid Prime Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Hydroid Prime::Chassis",displayName:"Hydroid Prime Chassis",rawName:"Chassis",requiredQty:1},{id:"Hydroid Prime::Systems",displayName:"Hydroid Prime Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Inaros Prime", category:"Warframe Prime", components:[{id:"Inaros Prime::Blueprint",displayName:"Inaros Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Inaros Prime::Neuroptics",displayName:"Inaros Prime Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Inaros Prime::Chassis",displayName:"Inaros Prime Chassis",rawName:"Chassis",requiredQty:1},{id:"Inaros Prime::Systems",displayName:"Inaros Prime Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Ivara Prime", category:"Warframe Prime", components:[{id:"Ivara Prime::Blueprint",displayName:"Ivara Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Ivara Prime::Neuroptics",displayName:"Ivara Prime Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Ivara Prime::Chassis",displayName:"Ivara Prime Chassis",rawName:"Chassis",requiredQty:1},{id:"Ivara Prime::Systems",displayName:"Ivara Prime Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Khora Prime", category:"Warframe Prime", components:[{id:"Khora Prime::Blueprint",displayName:"Khora Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Khora Prime::Neuroptics",displayName:"Khora Prime Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Khora Prime::Chassis",displayName:"Khora Prime Chassis",rawName:"Chassis",requiredQty:1},{id:"Khora Prime::Systems",displayName:"Khora Prime Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Limbo Prime", category:"Warframe Prime", components:[{id:"Limbo Prime::Blueprint",displayName:"Limbo Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Limbo Prime::Neuroptics",displayName:"Limbo Prime Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Limbo Prime::Chassis",displayName:"Limbo Prime Chassis",rawName:"Chassis",requiredQty:1},{id:"Limbo Prime::Systems",displayName:"Limbo Prime Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Loki Prime", category:"Warframe Prime", components:[{id:"Loki Prime::Blueprint",displayName:"Loki Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Loki Prime::Neuroptics",displayName:"Loki Prime Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Loki Prime::Chassis",displayName:"Loki Prime Chassis",rawName:"Chassis",requiredQty:1},{id:"Loki Prime::Systems",displayName:"Loki Prime Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Mag Prime", category:"Warframe Prime", components:[{id:"Mag Prime::Blueprint",displayName:"Mag Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Mag Prime::Neuroptics",displayName:"Mag Prime Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Mag Prime::Chassis",displayName:"Mag Prime Chassis",rawName:"Chassis",requiredQty:1},{id:"Mag Prime::Systems",displayName:"Mag Prime Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Mesa Prime", category:"Warframe Prime", components:[{id:"Mesa Prime::Blueprint",displayName:"Mesa Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Mesa Prime::Neuroptics",displayName:"Mesa Prime Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Mesa Prime::Chassis",displayName:"Mesa Prime Chassis",rawName:"Chassis",requiredQty:1},{id:"Mesa Prime::Systems",displayName:"Mesa Prime Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Mirage Prime", category:"Warframe Prime", components:[{id:"Mirage Prime::Blueprint",displayName:"Mirage Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Mirage Prime::Neuroptics",displayName:"Mirage Prime Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Mirage Prime::Chassis",displayName:"Mirage Prime Chassis",rawName:"Chassis",requiredQty:1},{id:"Mirage Prime::Systems",displayName:"Mirage Prime Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Nekros Prime", category:"Warframe Prime", components:[{id:"Nekros Prime::Blueprint",displayName:"Nekros Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Nekros Prime::Neuroptics",displayName:"Nekros Prime Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Nekros Prime::Chassis",displayName:"Nekros Prime Chassis",rawName:"Chassis",requiredQty:1},{id:"Nekros Prime::Systems",displayName:"Nekros Prime Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Nezha Prime", category:"Warframe Prime", components:[{id:"Nezha Prime::Blueprint",displayName:"Nezha Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Nezha Prime::Neuroptics",displayName:"Nezha Prime Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Nezha Prime::Chassis",displayName:"Nezha Prime Chassis",rawName:"Chassis",requiredQty:1},{id:"Nezha Prime::Systems",displayName:"Nezha Prime Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Nidus Prime", category:"Warframe Prime", components:[{id:"Nidus Prime::Blueprint",displayName:"Nidus Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Nidus Prime::Neuroptics",displayName:"Nidus Prime Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Nidus Prime::Chassis",displayName:"Nidus Prime Chassis",rawName:"Chassis",requiredQty:1},{id:"Nidus Prime::Systems",displayName:"Nidus Prime Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Nova Prime", category:"Warframe Prime", components:[{id:"Nova Prime::Blueprint",displayName:"Nova Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Nova Prime::Neuroptics",displayName:"Nova Prime Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Nova Prime::Chassis",displayName:"Nova Prime Chassis",rawName:"Chassis",requiredQty:1},{id:"Nova Prime::Systems",displayName:"Nova Prime Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Nyx Prime", category:"Warframe Prime", components:[{id:"Nyx Prime::Blueprint",displayName:"Nyx Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Nyx Prime::Neuroptics",displayName:"Nyx Prime Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Nyx Prime::Chassis",displayName:"Nyx Prime Chassis",rawName:"Chassis",requiredQty:1},{id:"Nyx Prime::Systems",displayName:"Nyx Prime Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Oberon Prime", category:"Warframe Prime", components:[{id:"Oberon Prime::Blueprint",displayName:"Oberon Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Oberon Prime::Neuroptics",displayName:"Oberon Prime Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Oberon Prime::Chassis",displayName:"Oberon Prime Chassis",rawName:"Chassis",requiredQty:1},{id:"Oberon Prime::Systems",displayName:"Oberon Prime Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Octavia Prime", category:"Warframe Prime", components:[{id:"Octavia Prime::Blueprint",displayName:"Octavia Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Octavia Prime::Neuroptics",displayName:"Octavia Prime Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Octavia Prime::Chassis",displayName:"Octavia Prime Chassis",rawName:"Chassis",requiredQty:1},{id:"Octavia Prime::Systems",displayName:"Octavia Prime Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Protea Prime", category:"Warframe Prime", components:[{id:"Protea Prime::Blueprint",displayName:"Protea Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Protea Prime::Neuroptics",displayName:"Protea Prime Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Protea Prime::Chassis",displayName:"Protea Prime Chassis",rawName:"Chassis",requiredQty:1},{id:"Protea Prime::Systems",displayName:"Protea Prime Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Revenant Prime", category:"Warframe Prime", components:[{id:"Revenant Prime::Blueprint",displayName:"Revenant Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Revenant Prime::Neuroptics",displayName:"Revenant Prime Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Revenant Prime::Chassis",displayName:"Revenant Prime Chassis",rawName:"Chassis",requiredQty:1},{id:"Revenant Prime::Systems",displayName:"Revenant Prime Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Rhino Prime", category:"Warframe Prime", components:[{id:"Rhino Prime::Blueprint",displayName:"Rhino Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Rhino Prime::Neuroptics",displayName:"Rhino Prime Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Rhino Prime::Chassis",displayName:"Rhino Prime Chassis",rawName:"Chassis",requiredQty:1},{id:"Rhino Prime::Systems",displayName:"Rhino Prime Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Saryn Prime", category:"Warframe Prime", components:[{id:"Saryn Prime::Blueprint",displayName:"Saryn Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Saryn Prime::Neuroptics",displayName:"Saryn Prime Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Saryn Prime::Chassis",displayName:"Saryn Prime Chassis",rawName:"Chassis",requiredQty:1},{id:"Saryn Prime::Systems",displayName:"Saryn Prime Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Sevagoth Prime", category:"Warframe Prime", components:[{id:"Sevagoth Prime::Blueprint",displayName:"Sevagoth Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Sevagoth Prime::Neuroptics",displayName:"Sevagoth Prime Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Sevagoth Prime::Chassis",displayName:"Sevagoth Prime Chassis",rawName:"Chassis",requiredQty:1},{id:"Sevagoth Prime::Systems",displayName:"Sevagoth Prime Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Styanax Prime", category:"Warframe Prime", components:[{id:"Styanax Prime::Blueprint",displayName:"Styanax Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Styanax Prime::Neuroptics",displayName:"Styanax Prime Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Styanax Prime::Chassis",displayName:"Styanax Prime Chassis",rawName:"Chassis",requiredQty:1},{id:"Styanax Prime::Systems",displayName:"Styanax Prime Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Titania Prime", category:"Warframe Prime", components:[{id:"Titania Prime::Blueprint",displayName:"Titania Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Titania Prime::Neuroptics",displayName:"Titania Prime Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Titania Prime::Chassis",displayName:"Titania Prime Chassis",rawName:"Chassis",requiredQty:1},{id:"Titania Prime::Systems",displayName:"Titania Prime Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Trinity Prime", category:"Warframe Prime", components:[{id:"Trinity Prime::Blueprint",displayName:"Trinity Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Trinity Prime::Neuroptics",displayName:"Trinity Prime Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Trinity Prime::Chassis",displayName:"Trinity Prime Chassis",rawName:"Chassis",requiredQty:1},{id:"Trinity Prime::Systems",displayName:"Trinity Prime Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Valkyr Prime", category:"Warframe Prime", components:[{id:"Valkyr Prime::Blueprint",displayName:"Valkyr Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Valkyr Prime::Neuroptics",displayName:"Valkyr Prime Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Valkyr Prime::Chassis",displayName:"Valkyr Prime Chassis",rawName:"Chassis",requiredQty:1},{id:"Valkyr Prime::Systems",displayName:"Valkyr Prime Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Vauban Prime", category:"Warframe Prime", components:[{id:"Vauban Prime::Blueprint",displayName:"Vauban Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Vauban Prime::Neuroptics",displayName:"Vauban Prime Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Vauban Prime::Chassis",displayName:"Vauban Prime Chassis",rawName:"Chassis",requiredQty:1},{id:"Vauban Prime::Systems",displayName:"Vauban Prime Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Volt Prime", category:"Warframe Prime", components:[{id:"Volt Prime::Blueprint",displayName:"Volt Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Volt Prime::Neuroptics",displayName:"Volt Prime Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Volt Prime::Chassis",displayName:"Volt Prime Chassis",rawName:"Chassis",requiredQty:1},{id:"Volt Prime::Systems",displayName:"Volt Prime Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Wisp Prime", category:"Warframe Prime", components:[{id:"Wisp Prime::Blueprint",displayName:"Wisp Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Wisp Prime::Neuroptics",displayName:"Wisp Prime Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Wisp Prime::Chassis",displayName:"Wisp Prime Chassis",rawName:"Chassis",requiredQty:1},{id:"Wisp Prime::Systems",displayName:"Wisp Prime Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Wukong Prime", category:"Warframe Prime", components:[{id:"Wukong Prime::Blueprint",displayName:"Wukong Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Wukong Prime::Neuroptics",displayName:"Wukong Prime Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Wukong Prime::Chassis",displayName:"Wukong Prime Chassis",rawName:"Chassis",requiredQty:1},{id:"Wukong Prime::Systems",displayName:"Wukong Prime Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Zephyr Prime", category:"Warframe Prime", components:[{id:"Zephyr Prime::Blueprint",displayName:"Zephyr Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Zephyr Prime::Neuroptics",displayName:"Zephyr Prime Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Zephyr Prime::Chassis",displayName:"Zephyr Prime Chassis",rawName:"Chassis",requiredQty:1},{id:"Zephyr Prime::Systems",displayName:"Zephyr Prime Systems",rawName:"Systems",requiredQty:1}] },
+
+    // ===== ARMAS PRIMÁRIAS PRIME =====
+    { name:"Boltor Prime", category:"Arma Primária Prime", components:[{id:"Boltor Prime::Blueprint",displayName:"Boltor Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Boltor Prime::Barrel",displayName:"Boltor Prime Barrel",rawName:"Barrel",requiredQty:1},{id:"Boltor Prime::Receiver",displayName:"Boltor Prime Receiver",rawName:"Receiver",requiredQty:1},{id:"Boltor Prime::Stock",displayName:"Boltor Prime Stock",rawName:"Stock",requiredQty:1}] },
+    { name:"Braton Prime", category:"Arma Primária Prime", components:[{id:"Braton Prime::Blueprint",displayName:"Braton Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Braton Prime::Barrel",displayName:"Braton Prime Barrel",rawName:"Barrel",requiredQty:1},{id:"Braton Prime::Receiver",displayName:"Braton Prime Receiver",rawName:"Receiver",requiredQty:1},{id:"Braton Prime::Stock",displayName:"Braton Prime Stock",rawName:"Stock",requiredQty:1}] },
+    { name:"Burston Prime", category:"Arma Primária Prime", components:[{id:"Burston Prime::Blueprint",displayName:"Burston Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Burston Prime::Barrel",displayName:"Burston Prime Barrel",rawName:"Barrel",requiredQty:1},{id:"Burston Prime::Receiver",displayName:"Burston Prime Receiver",rawName:"Receiver",requiredQty:1},{id:"Burston Prime::Stock",displayName:"Burston Prime Stock",rawName:"Stock",requiredQty:1}] },
+    { name:"Cernos Prime", category:"Arma Primária Prime", components:[{id:"Cernos Prime::Blueprint",displayName:"Cernos Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Cernos Prime::Lower Limb",displayName:"Cernos Prime Lower Limb",rawName:"Lower Limb",requiredQty:1},{id:"Cernos Prime::Upper Limb",displayName:"Cernos Prime Upper Limb",rawName:"Upper Limb",requiredQty:1},{id:"Cernos Prime::String",displayName:"Cernos Prime String",rawName:"String",requiredQty:1}] },
+    { name:"Corinth Prime", category:"Arma Primária Prime", components:[{id:"Corinth Prime::Blueprint",displayName:"Corinth Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Corinth Prime::Barrel",displayName:"Corinth Prime Barrel",rawName:"Barrel",requiredQty:1},{id:"Corinth Prime::Receiver",displayName:"Corinth Prime Receiver",rawName:"Receiver",requiredQty:1},{id:"Corinth Prime::Stock",displayName:"Corinth Prime Stock",rawName:"Stock",requiredQty:1}] },
+    { name:"Latron Prime", category:"Arma Primária Prime", components:[{id:"Latron Prime::Blueprint",displayName:"Latron Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Latron Prime::Barrel",displayName:"Latron Prime Barrel",rawName:"Barrel",requiredQty:1},{id:"Latron Prime::Receiver",displayName:"Latron Prime Receiver",rawName:"Receiver",requiredQty:1},{id:"Latron Prime::Stock",displayName:"Latron Prime Stock",rawName:"Stock",requiredQty:1}] },
+    { name:"Paris Prime", category:"Arma Primária Prime", components:[{id:"Paris Prime::Blueprint",displayName:"Paris Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Paris Prime::Lower Limb",displayName:"Paris Prime Lower Limb",rawName:"Lower Limb",requiredQty:1},{id:"Paris Prime::Upper Limb",displayName:"Paris Prime Upper Limb",rawName:"Upper Limb",requiredQty:1},{id:"Paris Prime::String",displayName:"Paris Prime String",rawName:"String",requiredQty:1}] },
+    { name:"Rubico Prime", category:"Arma Primária Prime", components:[{id:"Rubico Prime::Blueprint",displayName:"Rubico Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Rubico Prime::Barrel",displayName:"Rubico Prime Barrel",rawName:"Barrel",requiredQty:1},{id:"Rubico Prime::Receiver",displayName:"Rubico Prime Receiver",rawName:"Receiver",requiredQty:1},{id:"Rubico Prime::Stock",displayName:"Rubico Prime Stock",rawName:"Stock",requiredQty:1}] },
+    { name:"Soma Prime", category:"Arma Primária Prime", components:[{id:"Soma Prime::Blueprint",displayName:"Soma Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Soma Prime::Barrel",displayName:"Soma Prime Barrel",rawName:"Barrel",requiredQty:1},{id:"Soma Prime::Receiver",displayName:"Soma Prime Receiver",rawName:"Receiver",requiredQty:1},{id:"Soma Prime::Stock",displayName:"Soma Prime Stock",rawName:"Stock",requiredQty:1}] },
+    { name:"Stradavar Prime", category:"Arma Primária Prime", components:[{id:"Stradavar Prime::Blueprint",displayName:"Stradavar Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Stradavar Prime::Barrel",displayName:"Stradavar Prime Barrel",rawName:"Barrel",requiredQty:1},{id:"Stradavar Prime::Receiver",displayName:"Stradavar Prime Receiver",rawName:"Receiver",requiredQty:1},{id:"Stradavar Prime::Stock",displayName:"Stradavar Prime Stock",rawName:"Stock",requiredQty:1}] },
+    { name:"Tiberon Prime", category:"Arma Primária Prime", components:[{id:"Tiberon Prime::Blueprint",displayName:"Tiberon Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Tiberon Prime::Barrel",displayName:"Tiberon Prime Barrel",rawName:"Barrel",requiredQty:1},{id:"Tiberon Prime::Receiver",displayName:"Tiberon Prime Receiver",rawName:"Receiver",requiredQty:1},{id:"Tiberon Prime::Stock",displayName:"Tiberon Prime Stock",rawName:"Stock",requiredQty:1}] },
+    { name:"Tigris Prime", category:"Arma Primária Prime", components:[{id:"Tigris Prime::Blueprint",displayName:"Tigris Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Tigris Prime::Barrel",displayName:"Tigris Prime Barrel",rawName:"Barrel",requiredQty:1},{id:"Tigris Prime::Receiver",displayName:"Tigris Prime Receiver",rawName:"Receiver",requiredQty:1},{id:"Tigris Prime::Stock",displayName:"Tigris Prime Stock",rawName:"Stock",requiredQty:1}] },
+    { name:"Vectis Prime", category:"Arma Primária Prime", components:[{id:"Vectis Prime::Blueprint",displayName:"Vectis Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Vectis Prime::Barrel",displayName:"Vectis Prime Barrel",rawName:"Barrel",requiredQty:1},{id:"Vectis Prime::Receiver",displayName:"Vectis Prime Receiver",rawName:"Receiver",requiredQty:1},{id:"Vectis Prime::Stock",displayName:"Vectis Prime Stock",rawName:"Stock",requiredQty:1}] },
+    { name:"Acceltra Prime", category:"Arma Primária Prime", components:[{id:"Acceltra Prime::Blueprint",displayName:"Acceltra Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Acceltra Prime::Barrel",displayName:"Acceltra Prime Barrel",rawName:"Barrel",requiredQty:1},{id:"Acceltra Prime::Receiver",displayName:"Acceltra Prime Receiver",rawName:"Receiver",requiredQty:1},{id:"Acceltra Prime::Stock",displayName:"Acceltra Prime Stock",rawName:"Stock",requiredQty:1}] },
+    { name:"Phantasma Prime", category:"Arma Primária Prime", components:[{id:"Phantasma Prime::Blueprint",displayName:"Phantasma Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Phantasma Prime::Barrel",displayName:"Phantasma Prime Barrel",rawName:"Barrel",requiredQty:1},{id:"Phantasma Prime::Receiver",displayName:"Phantasma Prime Receiver",rawName:"Receiver",requiredQty:1},{id:"Phantasma Prime::Stock",displayName:"Phantasma Prime Stock",rawName:"Stock",requiredQty:1}] },
+    { name:"Nagantaka Prime", category:"Arma Primária Prime", components:[{id:"Nagantaka Prime::Blueprint",displayName:"Nagantaka Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Nagantaka Prime::Barrel",displayName:"Nagantaka Prime Barrel",rawName:"Barrel",requiredQty:1},{id:"Nagantaka Prime::Receiver",displayName:"Nagantaka Prime Receiver",rawName:"Receiver",requiredQty:1},{id:"Nagantaka Prime::Stock",displayName:"Nagantaka Prime Stock",rawName:"Stock",requiredQty:1}] },
+
+    // ===== ARMAS SECUNDÁRIAS PRIME =====
+    { name:"Akbronco Prime", category:"Arma Secundária Prime", components:[{id:"Akbronco Prime::Blueprint",displayName:"Akbronco Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Akbronco Prime::Link",displayName:"Akbronco Prime Link",rawName:"Link",requiredQty:1},{id:"Akbronco Prime::Barrel",displayName:"Akbronco Prime Barrel",rawName:"Barrel",requiredQty:1}] },
+    { name:"Akjagara Prime", category:"Arma Secundária Prime", components:[{id:"Akjagara Prime::Blueprint",displayName:"Akjagara Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Akjagara Prime::Link",displayName:"Akjagara Prime Link",rawName:"Link",requiredQty:1},{id:"Akjagara Prime::Barrel",displayName:"Akjagara Prime Barrel",rawName:"Barrel",requiredQty:1},{id:"Akjagara Prime::Receiver",displayName:"Akjagara Prime Receiver",rawName:"Receiver",requiredQty:1}] },
+    { name:"Aklex Prime", category:"Arma Secundária Prime", components:[{id:"Aklex Prime::Blueprint",displayName:"Aklex Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Aklex Prime::Link",displayName:"Aklex Prime Link",rawName:"Link",requiredQty:1},{id:"Aklex Prime::Barrel",displayName:"Aklex Prime Barrel",rawName:"Barrel",requiredQty:1}] },
+    { name:"Akstiletto Prime", category:"Arma Secundária Prime", components:[{id:"Akstiletto Prime::Blueprint",displayName:"Akstiletto Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Akstiletto Prime::Link",displayName:"Akstiletto Prime Link",rawName:"Link",requiredQty:1},{id:"Akstiletto Prime::Barrel",displayName:"Akstiletto Prime Barrel",rawName:"Barrel",requiredQty:1},{id:"Akstiletto Prime::Receiver",displayName:"Akstiletto Prime Receiver",rawName:"Receiver",requiredQty:1}] },
+    { name:"Akvasto Prime", category:"Arma Secundária Prime", components:[{id:"Akvasto Prime::Blueprint",displayName:"Akvasto Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Akvasto Prime::Link",displayName:"Akvasto Prime Link",rawName:"Link",requiredQty:1},{id:"Akvasto Prime::Barrel",displayName:"Akvasto Prime Barrel",rawName:"Barrel",requiredQty:1}] },
+    { name:"Ballistica Prime", category:"Arma Secundária Prime", components:[{id:"Ballistica Prime::Blueprint",displayName:"Ballistica Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Ballistica Prime::Lower Limb",displayName:"Ballistica Prime Lower Limb",rawName:"Lower Limb",requiredQty:1},{id:"Ballistica Prime::Upper Limb",displayName:"Ballistica Prime Upper Limb",rawName:"Upper Limb",requiredQty:1},{id:"Ballistica Prime::String",displayName:"Ballistica Prime String",rawName:"String",requiredQty:1}] },
+    { name:"Euphona Prime", category:"Arma Secundária Prime", components:[{id:"Euphona Prime::Blueprint",displayName:"Euphona Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Euphona Prime::Barrel",displayName:"Euphona Prime Barrel",rawName:"Barrel",requiredQty:1},{id:"Euphona Prime::Receiver",displayName:"Euphona Prime Receiver",rawName:"Receiver",requiredQty:1}] },
+    { name:"Hikou Prime", category:"Arma Secundária Prime", components:[{id:"Hikou Prime::Blueprint",displayName:"Hikou Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Hikou Prime::Stars",displayName:"Hikou Prime Stars",rawName:"Stars",requiredQty:1},{id:"Hikou Prime::Pouch",displayName:"Hikou Prime Pouch",rawName:"Pouch",requiredQty:1}] },
+    { name:"Knell Prime", category:"Arma Secundária Prime", components:[{id:"Knell Prime::Blueprint",displayName:"Knell Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Knell Prime::Barrel",displayName:"Knell Prime Barrel",rawName:"Barrel",requiredQty:1},{id:"Knell Prime::Receiver",displayName:"Knell Prime Receiver",rawName:"Receiver",requiredQty:1}] },
+    { name:"Lex Prime", category:"Arma Secundária Prime", components:[{id:"Lex Prime::Blueprint",displayName:"Lex Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Lex Prime::Barrel",displayName:"Lex Prime Barrel",rawName:"Barrel",requiredQty:1},{id:"Lex Prime::Receiver",displayName:"Lex Prime Receiver",rawName:"Receiver",requiredQty:1}] },
+    { name:"Pyrana Prime", category:"Arma Secundária Prime", components:[{id:"Pyrana Prime::Blueprint",displayName:"Pyrana Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Pyrana Prime::Barrel",displayName:"Pyrana Prime Barrel",rawName:"Barrel",requiredQty:1},{id:"Pyrana Prime::Receiver",displayName:"Pyrana Prime Receiver",rawName:"Receiver",requiredQty:1}] },
+    { name:"Sicarus Prime", category:"Arma Secundária Prime", components:[{id:"Sicarus Prime::Blueprint",displayName:"Sicarus Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Sicarus Prime::Barrel",displayName:"Sicarus Prime Barrel",rawName:"Barrel",requiredQty:1},{id:"Sicarus Prime::Receiver",displayName:"Sicarus Prime Receiver",rawName:"Receiver",requiredQty:1}] },
+    { name:"Spira Prime", category:"Arma Secundária Prime", components:[{id:"Spira Prime::Blueprint",displayName:"Spira Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Spira Prime::Blade",displayName:"Spira Prime Blade",rawName:"Blade",requiredQty:1},{id:"Spira Prime::Pouch",displayName:"Spira Prime Pouch",rawName:"Pouch",requiredQty:1}] },
+    { name:"Vasto Prime", category:"Arma Secundária Prime", components:[{id:"Vasto Prime::Blueprint",displayName:"Vasto Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Vasto Prime::Barrel",displayName:"Vasto Prime Barrel",rawName:"Barrel",requiredQty:1},{id:"Vasto Prime::Receiver",displayName:"Vasto Prime Receiver",rawName:"Receiver",requiredQty:1}] },
+
+    // ===== ARMAS CORPO A CORPO PRIME =====
+    { name:"Bo Prime", category:"Corpo a Corpo Prime", components:[{id:"Bo Prime::Blueprint",displayName:"Bo Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Bo Prime::Ornament",displayName:"Bo Prime Ornament",rawName:"Ornament",requiredQty:1},{id:"Bo Prime::Handle",displayName:"Bo Prime Handle",rawName:"Handle",requiredQty:1}] },
+    { name:"Dakra Prime", category:"Corpo a Corpo Prime", components:[{id:"Dakra Prime::Blueprint",displayName:"Dakra Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Dakra Prime::Blade",displayName:"Dakra Prime Blade",rawName:"Blade",requiredQty:1},{id:"Dakra Prime::Handle",displayName:"Dakra Prime Handle",rawName:"Handle",requiredQty:1}] },
+    { name:"Dual Kamas Prime", category:"Corpo a Corpo Prime", components:[{id:"Dual Kamas Prime::Blueprint",displayName:"Dual Kamas Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Dual Kamas Prime::Blade",displayName:"Dual Kamas Prime Blade",rawName:"Blade",requiredQty:1},{id:"Dual Kamas Prime::Handle",displayName:"Dual Kamas Prime Handle",rawName:"Handle",requiredQty:1}] },
+    { name:"Fang Prime", category:"Corpo a Corpo Prime", components:[{id:"Fang Prime::Blueprint",displayName:"Fang Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Fang Prime::Blade",displayName:"Fang Prime Blade",rawName:"Blade",requiredQty:1},{id:"Fang Prime::Handle",displayName:"Fang Prime Handle",rawName:"Handle",requiredQty:1}] },
+    { name:"Galatine Prime", category:"Corpo a Corpo Prime", components:[{id:"Galatine Prime::Blueprint",displayName:"Galatine Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Galatine Prime::Blade",displayName:"Galatine Prime Blade",rawName:"Blade",requiredQty:1},{id:"Galatine Prime::Handle",displayName:"Galatine Prime Handle",rawName:"Handle",requiredQty:1}] },
+    { name:"Glaive Prime", category:"Corpo a Corpo Prime", components:[{id:"Glaive Prime::Blueprint",displayName:"Glaive Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Glaive Prime::Disc",displayName:"Glaive Prime Disc",rawName:"Disc",requiredQty:1},{id:"Glaive Prime::Blade",displayName:"Glaive Prime Blade",rawName:"Blade",requiredQty:1}] },
+    { name:"Gram Prime", category:"Corpo a Corpo Prime", components:[{id:"Gram Prime::Blueprint",displayName:"Gram Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Gram Prime::Blade",displayName:"Gram Prime Blade",rawName:"Blade",requiredQty:1},{id:"Gram Prime::Handle",displayName:"Gram Prime Handle",rawName:"Handle",requiredQty:1}] },
+    { name:"Karyst Prime", category:"Corpo a Corpo Prime", components:[{id:"Karyst Prime::Blueprint",displayName:"Karyst Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Karyst Prime::Blade",displayName:"Karyst Prime Blade",rawName:"Blade",requiredQty:1},{id:"Karyst Prime::Handle",displayName:"Karyst Prime Handle",rawName:"Handle",requiredQty:1}] },
+    { name:"Kronen Prime", category:"Corpo a Corpo Prime", components:[{id:"Kronen Prime::Blueprint",displayName:"Kronen Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Kronen Prime::Blade",displayName:"Kronen Prime Blade",rawName:"Blade",requiredQty:1},{id:"Kronen Prime::Handle",displayName:"Kronen Prime Handle",rawName:"Handle",requiredQty:1}] },
+    { name:"Nami Skyla Prime", category:"Corpo a Corpo Prime", components:[{id:"Nami Skyla Prime::Blueprint",displayName:"Nami Skyla Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Nami Skyla Prime::Blade",displayName:"Nami Skyla Prime Blade",rawName:"Blade",requiredQty:1},{id:"Nami Skyla Prime::Handle",displayName:"Nami Skyla Prime Handle",rawName:"Handle",requiredQty:1}] },
+    { name:"Nikana Prime", category:"Corpo a Corpo Prime", components:[{id:"Nikana Prime::Blueprint",displayName:"Nikana Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Nikana Prime::Blade",displayName:"Nikana Prime Blade",rawName:"Blade",requiredQty:1},{id:"Nikana Prime::Hilt",displayName:"Nikana Prime Hilt",rawName:"Hilt",requiredQty:1}] },
+    { name:"Orthos Prime", category:"Corpo a Corpo Prime", components:[{id:"Orthos Prime::Blueprint",displayName:"Orthos Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Orthos Prime::Blade",displayName:"Orthos Prime Blade",rawName:"Blade",requiredQty:2},{id:"Orthos Prime::Handle",displayName:"Orthos Prime Handle",rawName:"Handle",requiredQty:1}] },
+    { name:"Pangolin Prime", category:"Corpo a Corpo Prime", components:[{id:"Pangolin Prime::Blueprint",displayName:"Pangolin Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Pangolin Prime::Blade",displayName:"Pangolin Prime Blade",rawName:"Blade",requiredQty:1},{id:"Pangolin Prime::Handle",displayName:"Pangolin Prime Handle",rawName:"Handle",requiredQty:1}] },
+    { name:"Reaper Prime", category:"Corpo a Corpo Prime", components:[{id:"Reaper Prime::Blueprint",displayName:"Reaper Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Reaper Prime::Blade",displayName:"Reaper Prime Blade",rawName:"Blade",requiredQty:1},{id:"Reaper Prime::Handle",displayName:"Reaper Prime Handle",rawName:"Handle",requiredQty:1}] },
+    { name:"Scindo Prime", category:"Corpo a Corpo Prime", components:[{id:"Scindo Prime::Blueprint",displayName:"Scindo Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Scindo Prime::Blade",displayName:"Scindo Prime Blade",rawName:"Blade",requiredQty:1},{id:"Scindo Prime::Handle",displayName:"Scindo Prime Handle",rawName:"Handle",requiredQty:1}] },
+    { name:"Silva & Aegis Prime", category:"Corpo a Corpo Prime", components:[{id:"Silva & Aegis Prime::Blueprint",displayName:"Silva & Aegis Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Silva & Aegis Prime::Blade",displayName:"Silva & Aegis Prime Blade",rawName:"Blade",requiredQty:1},{id:"Silva & Aegis Prime::Guard",displayName:"Silva & Aegis Prime Guard",rawName:"Guard",requiredQty:1},{id:"Silva & Aegis Prime::Handle",displayName:"Silva & Aegis Prime Handle",rawName:"Handle",requiredQty:1}] },
+    { name:"Tekko Prime", category:"Corpo a Corpo Prime", components:[{id:"Tekko Prime::Blueprint",displayName:"Tekko Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Tekko Prime::Blade",displayName:"Tekko Prime Blade",rawName:"Blade",requiredQty:1},{id:"Tekko Prime::Gauntlet",displayName:"Tekko Prime Gauntlet",rawName:"Gauntlet",requiredQty:1}] },
+    { name:"Venka Prime", category:"Corpo a Corpo Prime", components:[{id:"Venka Prime::Blueprint",displayName:"Venka Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Venka Prime::Blade",displayName:"Venka Prime Blade",rawName:"Blade",requiredQty:1},{id:"Venka Prime::Gauntlet",displayName:"Venka Prime Gauntlet",rawName:"Gauntlet",requiredQty:1}] },
+
+    // ===== SENTINELAS PRIME =====
+    { name:"Carrier Prime", category:"Sentinela Prime", components:[{id:"Carrier Prime::Blueprint",displayName:"Carrier Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Carrier Prime::Carapace",displayName:"Carrier Prime Carapace",rawName:"Carapace",requiredQty:1},{id:"Carrier Prime::Cerebrum",displayName:"Carrier Prime Cerebrum",rawName:"Cerebrum",requiredQty:1},{id:"Carrier Prime::Systems",displayName:"Carrier Prime Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Helios Prime", category:"Sentinela Prime", components:[{id:"Helios Prime::Blueprint",displayName:"Helios Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Helios Prime::Carapace",displayName:"Helios Prime Carapace",rawName:"Carapace",requiredQty:1},{id:"Helios Prime::Cerebrum",displayName:"Helios Prime Cerebrum",rawName:"Cerebrum",requiredQty:1},{id:"Helios Prime::Systems",displayName:"Helios Prime Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Wyrm Prime", category:"Sentinela Prime", components:[{id:"Wyrm Prime::Blueprint",displayName:"Wyrm Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Wyrm Prime::Carapace",displayName:"Wyrm Prime Carapace",rawName:"Carapace",requiredQty:1},{id:"Wyrm Prime::Cerebrum",displayName:"Wyrm Prime Cerebrum",rawName:"Cerebrum",requiredQty:1},{id:"Wyrm Prime::Systems",displayName:"Wyrm Prime Systems",rawName:"Systems",requiredQty:1}] },
+
+    // ===== NECRAMECHS =====
+    { name:"Bonewidow", category:"Necramech", components:[{id:"Bonewidow::Blueprint",displayName:"Bonewidow Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Bonewidow::Neuroptics",displayName:"Bonewidow Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Bonewidow::Chassis",displayName:"Bonewidow Chassis",rawName:"Chassis",requiredQty:1},{id:"Bonewidow::Systems",displayName:"Bonewidow Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Voidrig", category:"Necramech", components:[{id:"Voidrig::Blueprint",displayName:"Voidrig Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Voidrig::Neuroptics",displayName:"Voidrig Neuroptics",rawName:"Neuroptics",requiredQty:1},{id:"Voidrig::Chassis",displayName:"Voidrig Chassis",rawName:"Chassis",requiredQty:1},{id:"Voidrig::Systems",displayName:"Voidrig Systems",rawName:"Systems",requiredQty:1}] },
+
+    // ===== ARCHWINGS =====
+    { name:"Amesha", category:"Archwing", components:[{id:"Amesha::Blueprint",displayName:"Amesha Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Amesha::Wings",displayName:"Amesha Wings",rawName:"Wings",requiredQty:1},{id:"Amesha::Harness",displayName:"Amesha Harness",rawName:"Harness",requiredQty:1},{id:"Amesha::Systems",displayName:"Amesha Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Elytron", category:"Archwing", components:[{id:"Elytron::Blueprint",displayName:"Elytron Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Elytron::Wings",displayName:"Elytron Wings",rawName:"Wings",requiredQty:1},{id:"Elytron::Harness",displayName:"Elytron Harness",rawName:"Harness",requiredQty:1},{id:"Elytron::Systems",displayName:"Elytron Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Itzal", category:"Archwing", components:[{id:"Itzal::Blueprint",displayName:"Itzal Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Itzal::Wings",displayName:"Itzal Wings",rawName:"Wings",requiredQty:1},{id:"Itzal::Harness",displayName:"Itzal Harness",rawName:"Harness",requiredQty:1},{id:"Itzal::Systems",displayName:"Itzal Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Odonata", category:"Archwing", components:[{id:"Odonata::Blueprint",displayName:"Odonata Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Odonata::Wings",displayName:"Odonata Wings",rawName:"Wings",requiredQty:1},{id:"Odonata::Harness",displayName:"Odonata Harness",rawName:"Harness",requiredQty:1},{id:"Odonata::Systems",displayName:"Odonata Systems",rawName:"Systems",requiredQty:1}] },
+    { name:"Odonata Prime", category:"Archwing Prime", components:[{id:"Odonata Prime::Blueprint",displayName:"Odonata Prime Blueprint",rawName:"Blueprint",requiredQty:1},{id:"Odonata Prime::Wings",displayName:"Odonata Prime Wings",rawName:"Wings",requiredQty:1},{id:"Odonata Prime::Harness",displayName:"Odonata Prime Harness",rawName:"Harness",requiredQty:1},{id:"Odonata Prime::Systems",displayName:"Odonata Prime Systems",rawName:"Systems",requiredQty:1}] },
+];
+
+// ============================================
+// API HELPER
+// ============================================
 class WarframeAPI {
-
-    // Fonte rápida (~2MB em vez de 80MB)
-    static async fetchItems() {
-        // Tenta endpoints menores primeiro
-        const sources = [
-            { url: 'https://api.warframestat.us/items', name: 'warframestat' },
-            { url: 'https://raw.githubusercontent.com/WFCD/warframe-items/master/data/json/Warframes.json', name: 'github-wf', partial: true },
-        ];
-
-        for (const source of sources) {
-            try {
-                const controller = new AbortController();
-                const timeout = setTimeout(() => controller.abort(), 15000); // 15s timeout
-
-                const r = await fetch(source.url, { signal: controller.signal });
-                clearTimeout(timeout);
-
-                if (!r.ok) continue;
-                const data = await r.json();
-                return { items: data, source: source.name };
-            } catch (e) {
-                console.warn(`[API] ${source.name} failed:`, e.message);
-                continue;
-            }
-        }
-
-        // Se tudo falhar, tenta GitHub completo como último recurso
-        try {
-            const r = await fetch('https://raw.githubusercontent.com/WFCD/warframe-items/master/data/json/All.json');
-            if (r.ok) {
-                const data = await r.json();
-                return { items: data, source: 'github-all' };
-            }
-        } catch (e) { }
-
-        return null;
-    }
-
-    static mapCategory(item) {
-        const c = (item.category || '').toLowerCase();
-        const t = (item.type || '').toLowerCase();
-        const n = item.name || '';
-        const p = n.includes('Prime');
-        if (c === 'warframes' || t === 'warframe') return p ? 'Warframe Prime' : 'Warframe';
-        if (c === 'primary' || t === 'primary') return p ? 'Arma Primária Prime' : 'Arma Primária';
-        if (c === 'secondary' || t === 'secondary') return p ? 'Arma Secundária Prime' : 'Arma Secundária';
-        if (c === 'melee' || t === 'melee') return p ? 'Corpo a Corpo Prime' : 'Corpo a Corpo';
-        if (c === 'sentinels' || t === 'sentinel') return p ? 'Sentinela Prime' : 'Sentinela';
-        if (c === 'archwing' || t === 'archwing') return p ? 'Archwing Prime' : 'Archwing';
-        if (c === 'pets' || t === 'pet') return 'Companheiro';
-        if (c === 'necramechs') return 'Necramech';
-        return 'Outro';
-    }
-
-    static isGenericResource(name) {
-        const l = name.toLowerCase();
-        const skip = new Set([
-            'credits','orokin cell','neurodes','morphics','control module','gallium',
-            'neural sensors','neurode','plastids','polymer bundle','rubedo','salvage',
-            'ferrite','nano spores','alloy plate','circuits','oxium','cryotic',
-            'argon crystal','tellurium','nitain extract','forma','kuva','void traces',
-            'detonite injector','fieldron','mutagen mass','pherliac pod','thermia',
-            'cubic diodes','carbides','copernics','bracoids','thaumica','namalon',
-            'hesperon','travocyte','pustulite','ganglion','scintillant','entrati lanthorn',
-            'voidplume quill','voidplume down','voidplume crest','voidplume pinion',
-            'lucent teroglobe','steel essence','vitus essence','cetus wisp','breath of the eidolon',
-            'fish oil','iradite','grokdrul','maprico','thermal sludge','mytocardia spore',
-            'gorgaricus spore','tepa nodule','dusklight sarracenia','moonlight dragonlily',
-            'sunlight threshcone','ruk\'s claw','lunar pitcher','frostleaf','vestan moss',
-            'star crimzian','star amarast','star veridos','star azureus',
-            'amarast','azureus','veridos','crimzian','marquise veridos','marquise thyst',
-            'esher devar','orb vallis','plains of eidolon','tralok eyes','murkray liver',
-            'norg brain','cuthol tendon','heart of the eidolon','sentirum','nyth',
-            'radian sentirum','marquise veridos','marquise thyst','zodian','thyst',
-            'heart nyth','star crimzian','axidite','pustrelite','connla sprout',
-            'ganglion','saturated muscle mass','lucent teroglobe','entrati lanthorn',
-            'sporulate sac','biotic filter','cranial foremount','damaged necramech weapon barrel',
-            'damaged necramech weapon receiver','damaged necramech weapon stock',
-            'gyromag systems','atmo systems','repeller systems'
-        ]);
-        return skip.has(l);
-    }
-
-    static parseRecipes(items) {
-        const recipes = [];
-        const seen = new Set();
-        const validCats = new Set(['warframes','primary','secondary','melee','sentinels','archwing','necramechs','pets']);
-        const validTypes = new Set(['warframe','primary','secondary','melee','sentinel','archwing','pet','necramech','arch-gun','arch-melee']);
-
-        for (const item of items) {
-            if (!item.components || !item.components.length || !item.name) continue;
-            const c = (item.category || '').toLowerCase();
-            const t = (item.type || '').toLowerCase();
-            if (!validCats.has(c) && !validTypes.has(t)) continue;
-            if (seen.has(item.name)) continue;
-            seen.add(item.name);
-
-            const parentName = item.name;
-            const components = [];
-
-            for (const comp of item.components) {
-                const rawName = comp.name || comp.itemName || '';
-                if (!rawName || /^\d+$/.test(rawName.trim()) || this.isGenericResource(rawName)) continue;
-
-                const id = `${parentName}::${rawName}`;
-                let displayName;
-                const rawLower = rawName.toLowerCase();
-                const parentLower = parentName.toLowerCase();
-
-                if (rawLower.includes(parentLower) || parentLower.includes(rawLower)) {
-                    displayName = rawName;
-                } else {
-                    displayName = `${parentName} ${rawName}`;
-                }
-
-                const requiredQty = comp.itemCount || 1;
-                components.push({ id, displayName, rawName, requiredQty });
-            }
-
-            if (components.length < 2) continue;
-
-            recipes.push({
-                name: parentName,
-                category: this.mapCategory(item),
-                components,
-                wikiaUrl: item.wikiaUrl || null,
-                description: item.description || '',
-                imageName: item.imageName || null
-            });
-        }
-
-        recipes.sort((a, b) => a.name.localeCompare(b.name));
-        return recipes;
+    static getCategories(recipes) {
+        return [...new Set(recipes.map(r => r.category))].sort();
     }
 
     static buildComponentMaps(recipes) {
         const allComps = [];
         const compMap = {};
+
         for (const recipe of recipes) {
             for (const comp of recipe.components) {
                 if (!compMap[comp.id]) {
@@ -146,114 +211,38 @@ class WarframeAPI {
                         displayName: comp.displayName,
                         parentName: recipe.name,
                         rawName: comp.rawName,
-                        requiredQty: comp.requiredQty
+                        requiredQty: comp.requiredQty,
+                        rarity: 'unknown' // Será preenchido pelo rarity.js
                     };
                     allComps.push({
                         id: comp.id,
                         displayName: comp.displayName,
-                        parentName: recipe.name
+                        parentName: recipe.name,
+                        rarity: 'unknown'
                     });
                 }
             }
         }
+
         allComps.sort((a, b) => a.displayName.localeCompare(b.displayName));
         return { allComps, compMap };
     }
-
-    static getCategories(recipes) {
-        return [...new Set(recipes.map(r => r.category))].sort();
-    }
 }
 
-// ===== CACHE =====
-function cacheRecipes(recipes) {
-    try {
-        // Salva versão compacta (sem description e wikiaUrl)
-        const compact = recipes.map(r => ({
-            name: r.name,
-            category: r.category,
-            components: r.components,
-            imageName: r.imageName
-        }));
-        StorageManager.setLS('wf_rc5', JSON.stringify(compact));
-        StorageManager.setLS('wf_rc5_t', Date.now().toString());
-    } catch (e) {
-        console.warn('[Cache] Falha ao salvar:', e.message);
-        // Se localStorage estiver cheio, tenta limpar caches antigos
-        try {
-            StorageManager.removeLS('wf_rc4');
-            StorageManager.removeLS('wf_rc4_t');
-            StorageManager.removeLS('wf_rc3');
-            StorageManager.removeLS('wf_rc3_t');
-            StorageManager.setLS('wf_rc5', JSON.stringify(recipes));
-            StorageManager.setLS('wf_rc5_t', Date.now().toString());
-        } catch (e2) { }
-    }
-}
-
-function getCachedRecipes() {
-    try {
-        const c = StorageManager.getLS('wf_rc5');
-        const t = StorageManager.getLS('wf_rc5_t');
-        if (c && t && Date.now() - parseInt(t) < CONFIG.CACHE_TTL_MS) {
-            return JSON.parse(c);
-        }
-    } catch (e) { }
-    return null;
-}
-
-// ===== LOAD API =====
+// ============================================
+// LOAD (instantâneo, sem API externa)
+// ============================================
 async function loadAPI(force = false) {
-    setProgress(5, 'Verificando cache...');
+    setProgress(10, 'Carregando dados...');
+    await new Promise(r => setTimeout(r, 50));
 
-    // 1. Cache primeiro (instantâneo)
-    if (!force) {
-        const cached = getCachedRecipes();
-        if (cached && cached.length) {
-            setProgress(50, 'Carregando do cache...');
-            RECIPES = cached;
-            const maps = WarframeAPI.buildComponentMaps(RECIPES);
-            ALL_COMPONENTS = maps.allComps;
-            COMP_MAP = maps.compMap;
-            API_SOURCE = 'cache';
-            API_LOADED = true;
-            setProgress(100, `${RECIPES.length} receitas (cache)`);
-            return true;
-        }
-    }
+    RECIPES = [...LOCAL_RECIPES].sort((a, b) => a.name.localeCompare(b.name));
+    const maps = WarframeAPI.buildComponentMaps(RECIPES);
+    ALL_COMPONENTS = maps.allComps;
+    COMP_MAP = maps.compMap;
+    API_SOURCE = 'local';
+    API_LOADED = true;
 
-    // 2. Busca da API
-    setProgress(10, 'Conectando...');
-    const result = await WarframeAPI.fetchItems();
-
-    if (result) {
-        setProgress(60, `Processando ${result.items.length} itens...`);
-        RECIPES = WarframeAPI.parseRecipes(result.items);
-        const maps = WarframeAPI.buildComponentMaps(RECIPES);
-        ALL_COMPONENTS = maps.allComps;
-        COMP_MAP = maps.compMap;
-        API_SOURCE = result.source;
-        API_LOADED = true;
-        setProgress(90, 'Salvando cache...');
-        cacheRecipes(RECIPES);
-        setProgress(100, `${RECIPES.length} receitas!`);
-        return true;
-    }
-
-    // 3. Cache expirado como fallback
-    try {
-        const old = StorageManager.getLS('wf_rc5');
-        if (old) {
-            RECIPES = JSON.parse(old);
-            const maps = WarframeAPI.buildComponentMaps(RECIPES);
-            ALL_COMPONENTS = maps.allComps;
-            COMP_MAP = maps.compMap;
-            API_SOURCE = 'cache-expired';
-            API_LOADED = true;
-            setProgress(100, 'Cache antigo');
-            return true;
-        }
-    } catch (e) { }
-
-    return false;
+    setProgress(100, `${RECIPES.length} receitas carregadas!`);
+    return true;
 }
