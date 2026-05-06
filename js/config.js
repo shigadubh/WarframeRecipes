@@ -5,7 +5,5 @@ const CONFIG = {
     SYNC_INTERVAL_MS: 300000,
     CACHE_TTL_MS: 86400000,
     MAX_LOCAL_BACKUPS: 5,
-    WFCD_URL: 'https://raw.githubusercontent.com/WFCD/warframe-items/master/data/json/All.json',
-    WFSTAT_URL: 'https://api.warframestat.us/items',
     IMG_CDN: 'https://cdn.warframestat.us/img/',
 };
