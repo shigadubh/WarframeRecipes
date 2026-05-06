@@ -67,4 +67,34 @@ class CloudSync {
 }
 
 const cloudSync=new CloudSync();
-function setSyncStatus(state,text){const b=document.getElementById('syncBadge');if(!b)return;b.className=`sync-badge ${state}`;b.textContent=text;b.title=`Último sync: ${timeAgo(cloudSync.getLastSyncTime())}`;}
+function setSyncStatus(state, text) {
+    const badge = document.getElementById('syncBadge');
+    if (!badge) return;
+    badge.className = `sync-badge ${state}`;
+    badge.textContent = text;
+
+    const lastSync = cloudSync.getLastSyncTime();
+    let title = '';
+
+    switch (state) {
+        case 'idle':
+            title = '☁️ AGUARDANDO — Faça login para sincronizar com a nuvem.\n\nSeus dados ainda estão salvos localmente.';
+            break;
+        case 'syncing':
+            title = '⏳ SINCRONIZANDO — Enviando dados para a nuvem...\n\nNão feche o navegador agora.';
+            break;
+        case 'synced':
+            title = `✅ SINCRONIZADO — Dados salvos na nuvem com sucesso!\n\nÚltimo sync: ${timeAgo(lastSync)}\nServidor: Supabase\n\nVocê pode acessar de qualquer dispositivo fazendo login com o mesmo nome.`;
+            break;
+        case 'error':
+            title = '❌ ERRO — Falha ao sincronizar com a nuvem.\n\nSeus dados ainda estão salvos localmente.\nClique no botão ☁️ para tentar novamente.';
+            break;
+        case 'offline':
+            title = '📴 OFFLINE — Sem conexão com a internet.\n\nSeus dados continuam sendo salvos localmente.\nQuando voltar a internet, será sincronizado automaticamente.';
+            break;
+        default:
+            title = `Status: ${state}`;
+    }
+
+    badge.title = title;
+}
