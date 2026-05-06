@@ -1,9 +1,11 @@
 /**
  * ui-crafted.js
- * Aba dedicada aos itens fabricados COM busca e fabricação manual
+ * Aba de fabricados COM busca e fabricação manual
  */
 
 function renderCrafted() {
+    if (!el.craftedGrid) return;
+
     const search = normalize(el.craftedSearch.value);
     const catFilter = el.craftedCategoryFilter.value;
 
@@ -26,7 +28,10 @@ function renderCrafted() {
     const addBtn = document.createElement('button');
     addBtn.className = 'crafted-add-btn';
     addBtn.innerHTML = '🔨 MARCAR ITEM COMO FABRICADO';
-    addBtn.addEventListener('click', openManualCraftModal);
+    addBtn.addEventListener('click', () => {
+        console.log('[ManualCraft] Botão clicado');
+        openManualCraftModal();
+    });
     el.craftedGrid.appendChild(addBtn);
 
     if (!craftedRecipes.length) {
@@ -90,6 +95,8 @@ function createCraftedCard(recipe) {
 }
 
 function renderCraftedStats(count) {
+    if (!el.craftedStats) return;
+
     const cats = {};
     RECIPES.forEach(r => {
         if (inv.isCrafted(r.name)) {
@@ -116,6 +123,8 @@ function renderCraftedStats(count) {
 }
 
 function populateCraftedCategories() {
+    if (!el.craftedCategoryFilter) return;
+
     const cats = WarframeAPI.getCategories(RECIPES);
     el.craftedCategoryFilter.innerHTML = '<option value="all">Todas Categorias</option>';
     cats.forEach(c => {
@@ -129,18 +138,57 @@ function populateCraftedCategories() {
 // ============================================
 // MODAL MANUAL DE FABRICAÇÃO
 // ============================================
+
+// Cria o modal dinamicamente se não existir no HTML
+function ensureManualCraftModal() {
+    let modal = document.getElementById('manualCraftModal');
+    if (modal) return modal;
+
+    console.log('[ManualCraft] Criando modal dinamicamente...');
+
+    modal = document.createElement('div');
+    modal.id = 'manualCraftModal';
+    modal.className = 'modal hidden';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🔨 MARCAR COMO FABRICADO</h2>
+                <button class="modal-close" data-close="manualCraftModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="color:var(--text-muted);font-size:13px;margin-bottom:12px;">
+                    Marque qualquer item como fabricado sem precisar ter os componentes no inventário.
+                </p>
+                <div class="search-box modal-search">
+                    <input type="text" id="manualCraftSearch" placeholder="🔍 Buscar receita...">
+                </div>
+                <div class="manual-craft-list" id="manualCraftList"></div>
+            </div>
+        </div>`;
+
+    document.body.appendChild(modal);
+
+    // Bind do botão de fechar
+    modal.querySelector('.modal-close').addEventListener('click', () => {
+        modal.classList.add('hidden');
+    });
+
+    // Bind do clique fora pra fechar
+    modal.addEventListener('click', e => {
+        if (e.target === modal) modal.classList.add('hidden');
+    });
+
+    return modal;
+}
+
 let manualSearchTimer = null;
 
 function openManualCraftModal() {
-    const modal = document.getElementById('manualCraftModal');
+    const modal = ensureManualCraftModal();
     const search = document.getElementById('manualCraftSearch');
-    if (!modal) {
-        console.error('[ManualCraft] Modal não encontrado no DOM');
-        showToast('Erro ao abrir modal', 'error');
-        return;
-    }
 
     modal.classList.remove('hidden');
+
     if (search) {
         search.value = '';
         // Bind do search se ainda não foi feito
@@ -160,7 +208,10 @@ function openManualCraftModal() {
 function renderManualCraftList() {
     const searchEl = document.getElementById('manualCraftSearch');
     const list = document.getElementById('manualCraftList');
-    if (!list) return;
+    if (!list) {
+        console.error('[ManualCraft] Lista não encontrada');
+        return;
+    }
 
     const search = searchEl ? normalize(searchEl.value) : '';
 
