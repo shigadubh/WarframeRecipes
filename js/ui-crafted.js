@@ -3,6 +3,9 @@
  * Aba de fabricados COM busca e fabricação manual
  */
 
+// ============================================
+// RENDER PRINCIPAL DA ABA FABRICADOS
+// ============================================
 function renderCrafted() {
     if (!el.craftedGrid) return;
 
@@ -24,12 +27,11 @@ function renderCrafted() {
 
     el.craftedGrid.innerHTML = '';
 
-    // BOTÃO de marcar fabricação manual (sempre visível no topo)
+    // BOTÃO de marcar fabricação manual (sempre visível)
     const addBtn = document.createElement('button');
     addBtn.className = 'crafted-add-btn';
     addBtn.innerHTML = '🔨 MARCAR ITEM COMO FABRICADO';
     addBtn.addEventListener('click', () => {
-        console.log('[ManualCraft] Botão clicado');
         openManualCraftModal();
     });
     el.craftedGrid.appendChild(addBtn);
@@ -48,6 +50,9 @@ function renderCrafted() {
     renderCraftedStats(craftedRecipes.length);
 }
 
+// ============================================
+// CRIA CARD DE ITEM FABRICADO
+// ============================================
 function createCraftedCard(recipe) {
     const isPrime = recipe.name.includes('Prime');
     const craftTime = inv.getCraftedTime(recipe.name);
@@ -94,6 +99,9 @@ function createCraftedCard(recipe) {
     return card;
 }
 
+// ============================================
+// ESTATÍSTICAS DA ABA
+// ============================================
 function renderCraftedStats(count) {
     if (!el.craftedStats) return;
 
@@ -122,6 +130,9 @@ function renderCraftedStats(count) {
         </div>` : ''}`;
 }
 
+// ============================================
+// POPULATE FILTRO DE CATEGORIAS
+// ============================================
 function populateCraftedCategories() {
     if (!el.craftedCategoryFilter) return;
 
@@ -137,14 +148,18 @@ function populateCraftedCategories() {
 
 // ============================================
 // MODAL MANUAL DE FABRICAÇÃO
+// (criado UMA vez e reutilizado)
 // ============================================
+let manualSearchTimer = null;
 
-// Cria o modal dinamicamente se não existir no HTML
 function ensureManualCraftModal() {
     let modal = document.getElementById('manualCraftModal');
+
+    // Se já existe, retorna
     if (modal) return modal;
 
-    console.log('[ManualCraft] Criando modal dinamicamente...');
+    // Cria pela primeira vez
+    console.log('[ManualCraft] Criando modal pela primeira vez...');
 
     modal = document.createElement('div');
     modal.id = 'manualCraftModal';
@@ -168,37 +183,31 @@ function ensureManualCraftModal() {
 
     document.body.appendChild(modal);
 
-    // Bind do botão de fechar
-    modal.querySelector('.modal-close').addEventListener('click', () => {
-        modal.classList.add('hidden');
-    });
-
-    // Bind do clique fora pra fechar
-    modal.addEventListener('click', e => {
-        if (e.target === modal) modal.classList.add('hidden');
-    });
+    // Bind do search com debounce (UMA ÚNICA vez)
+    const search = modal.querySelector('#manualCraftSearch');
+    if (search) {
+        search.addEventListener('input', () => {
+            clearTimeout(manualSearchTimer);
+            manualSearchTimer = setTimeout(renderManualCraftList, 300);
+        });
+    }
 
     return modal;
 }
 
-let manualSearchTimer = null;
-
 function openManualCraftModal() {
-    const modal = ensureManualCraftModal();
-    const search = document.getElementById('manualCraftSearch');
+    // Fecha QUALQUER outro modal aberto antes
+    document.querySelectorAll('.modal:not(.hidden)').forEach(m => {
+        if (m.id !== 'loginModal') m.classList.add('hidden');
+    });
 
+    // Abre o modal manual
+    const modal = ensureManualCraftModal();
     modal.classList.remove('hidden');
 
+    const search = document.getElementById('manualCraftSearch');
     if (search) {
         search.value = '';
-        // Bind do search se ainda não foi feito
-        if (!search.dataset.bound) {
-            search.addEventListener('input', () => {
-                clearTimeout(manualSearchTimer);
-                manualSearchTimer = setTimeout(renderManualCraftList, 300);
-            });
-            search.dataset.bound = 'true';
-        }
         setTimeout(() => search.focus(), 100);
     }
 
@@ -208,10 +217,7 @@ function openManualCraftModal() {
 function renderManualCraftList() {
     const searchEl = document.getElementById('manualCraftSearch');
     const list = document.getElementById('manualCraftList');
-    if (!list) {
-        console.error('[ManualCraft] Lista não encontrada');
-        return;
-    }
+    if (!list) return;
 
     const search = searchEl ? normalize(searchEl.value) : '';
 
