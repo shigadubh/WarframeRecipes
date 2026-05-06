@@ -85,21 +85,45 @@ function setupEvents(){
     document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();if(inv.currentUser){inv.save();inv.createBackup();cloudSync.push();showToast('Salvo! (Ctrl+S)');}}});
 }
 
-async function boot(){
-    setProgress(0,'Inicializando...');
-    const ok=await loadAPI();
-    if(!ok){el.loadingError.style.display='block';el.loadingError.innerHTML=`<p>⚠️ Sem dados.</p><button onclick="location.reload()">TENTAR</button>`;return;}
-    populateCategories();populateCraftedCategories();updateApiStatus();setupEvents();
-    const savedId=InventoryManager.getSavedCloudUserId(),lastUser=InventoryManager.getLastUser();
-    if(savedId&&lastUser){
-        inv.loadUser(lastUser);el.userName.textContent=lastUser.toUpperCase();
-        setTimeout(()=>{el.loadingScreen.classList.add('hidden');el.app.style.display='block';renderAll();},500);
-        cloudSync.resumeSession(savedId).then(ok=>{if(ok){invalidateProgressCache();renderAll();showToast('Sincronizado!');}});
-    }else if(lastUser){
-        inv.loadUser(lastUser);el.userName.textContent=lastUser.toUpperCase();el.loginInput.value=lastUser;
-        setTimeout(()=>{el.loadingScreen.classList.add('hidden');el.app.style.display='block';el.loginModal.classList.remove('hidden');renderAll();},500);
-    }else{
-        setTimeout(()=>{el.loadingScreen.classList.add('hidden');el.app.style.display='block';el.loginModal.classList.remove('hidden');setTimeout(()=>el.loginInput.focus(),300);},500);
+async function boot() {
+    setProgress(0, 'Inicializando...');
+
+    const ok = await loadAPI();
+    if (!ok) {
+        el.loadingError.style.display = 'block';
+        el.loadingError.innerHTML = `
+            <p>⚠️ Sem dados disponíveis.</p>
+            <button onclick="location.reload()">TENTAR NOVAMENTE</button>`;
+        return;
+    }
+
+    populateCategories();
+    updateApiStatus();
+
+    const lastUser = InventoryManager.getLastUser();
+    if (lastUser) {
+        inv.loadUser(lastUser);
+        el.userName.textContent = lastUser.toUpperCase();
+    }
+
+    setTimeout(() => {
+        el.loadingScreen.classList.add('hidden');
+        el.app.style.display = 'block';
+        renderAll();
+        if (inv.currentUser && inv.getAllItems().length) {
+            inv.createBackup();
+        }
+    }, 600);
+
+    const savedCloudId = InventoryManager.getSavedCloudUserId();
+    if (savedCloudId && lastUser) {
+        cloudSync.resumeSession(savedCloudId).then(ok => {
+            if (ok) {
+                invalidateProgressCache();
+                renderAll();
+                showToast('Dados sincronizados da nuvem!', 'success');
+            }
+        });
     }
 }
 
